@@ -3,62 +3,56 @@ package elasticbook
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 )
 
 // https://godoc.org/gopkg.in/olivere/elastic.v3
 import "gopkg.in/olivere/elastic.v3"
 
+// Root is the root of the Bookmarks tree
+type Root struct {
+	Checksum string
+	Version  int
+	Roots
+}
+
+// Roots is the container of the 4 main bookmark structure (high level)
+type Roots struct {
+	BookmarkBar            Base   `json:"bookmark_bar"`
+	Other                  Base   `json:"other"`
+	SyncTransactionVersion string `json:"sync_transaction_version"`
+	Synced                 Base   `json:"synced"`
+}
+
+// Base is a "folder-like" container of Bookmarks
+type Base struct {
+	Children     []Bookmark `json:"children"`
+	DateAdded    string     `json:"date_added"`
+	DataModified string     `json:"date_modified"`
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	NodeType     string     `json:"type"`
+}
+
 // Meta contains the attached metadata to the Bookmark entry
 type Meta struct {
-	StarsID        string
-	StarsImageData string
-	StarsIsSynced  string
-	StarsPageData  string
-	StarsType      string
+	StarsID        string `json:"stars.id"`
+	StarsImageData string `json:"stars.imageData"`
+	StarsIsSynced  string `json:"stars.isSynced"`
+	StarsPageData  string `json:"stars.pageData"`
+	StarsType      string `json:"stars.type"`
 }
 
 // Bookmark is a bookmark entry
 type Bookmark struct {
-	DateAdded              string
-	OriginalID             string
-	MetaInfo               Meta
-	Name                   string
-	SyncTransactionVersion string
-	Type                   string
-	URL                    string
-}
-
-// A sample entry:
-// {
-// 	"date_added": "13032201986000000",
-// 	"id": "25782",
-// 	"meta_info": {
-// 		"stars.id": "ssc_267d2d8ea5010886",
-// 		"stars.imageData": "aaa",
-// 		"stars.isSynced": "true",
-// 		"stars.pageData": "Ig5qbzNhUmUyOXVIc0JETQ==",
-// 		"stars.type": "2"
-// 	},
-// 	"name": "SlashDot",
-// 	"sync_transaction_version": "57627",
-// 	"type": "url",
-// 	"url": "http://slashdot.org/"
-// }
-var smpl = Bookmark{
-	DateAdded:  "13032201986000000",
-	OriginalID: "25782",
-	MetaInfo: Meta{
-		StarsID:        "ssc_267d2d8ea5010886",
-		StarsImageData: "aaa",
-		StarsIsSynced:  "true",
-		StarsPageData:  "Ig5qbzNhUmUyOXVIc0JETQ==",
-		StarsType:      "2",
-	},
-	Name: "SlashDot",
-	SyncTransactionVersion: "57627",
-	Type: "url",
-	URL:  "http://slashdot.org/",
+	DateAdded              string `json:"date_added"`
+	OriginalID             string `json:"id"`
+	MetaInfo               Meta   `json:"meta_info,omitempty"`
+	Name                   string `json:"name"`
+	SyncTransactionVersion string `json:"sync_transaction_version"`
+	Type                   string `json:"type"`
+	URL                    string `json:"url"`
 }
 
 func client() *elastic.Client {
@@ -69,12 +63,26 @@ func client() *elastic.Client {
 	return client
 }
 
+// Parse run the JSON parser
+func Parse(b []byte) {
+	x := new(Root)
+	err := json.Unmarshal(b, &x)
+	if err != nil {
+		panic(err.Error())
+	} else {
+		fmt.Fprintf(os.Stdout, "It Works!\n")
+		fmt.Fprintf(os.Stdout, "%s\n", x.Roots.Other.Name)
+	}
+	return
+}
+
 // Sample is the sample
 func Sample() {
 	client := client()
 	_, err := client.CreateIndex("elasticbook").Do()
 	if err != nil {
-		panic(err)
+		// TODO: fix and check!
+		// panic(err)
 	}
 
 	// Add a document to the index
@@ -82,7 +90,8 @@ func Sample() {
 		Index("elasticbook").
 		Type("bookmark").
 		Id("1").
-		BodyJson(smpl).
+		BodyJson(new(interface{})).
+		// BodyJson(smpl).
 		Do()
 	if err != nil {
 		// Handle error
