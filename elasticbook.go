@@ -12,9 +12,9 @@ import "gopkg.in/olivere/elastic.v3"
 
 // Root is the root of the Bookmarks tree
 type Root struct {
-	Checksum string
-	Version  int
-	Roots
+	Checksum string `json:"checksum"`
+	Version  int    `json:"version"`
+	Roots    Roots  `json:"roots"`
 }
 
 // Roots is the container of the 4 main bookmark structure (high level)
@@ -33,6 +33,10 @@ type Base struct {
 	ID           string     `json:"id"`
 	Name         string     `json:"name"`
 	NodeType     string     `json:"type"`
+}
+
+func (b *Base) String() string {
+	return fmt.Sprintf("%s (%d)", b.Name, len(b.Children))
 }
 
 // Meta contains the attached metadata to the Bookmark entry
@@ -71,13 +75,15 @@ func Parse(b []byte) {
 		panic(err.Error())
 	} else {
 		fmt.Fprintf(os.Stdout, "It Works!\n")
-		fmt.Fprintf(os.Stdout, "%s\n", x.Roots.Other.Name)
+		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.BookmarkBar.String())
+		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.Other.String())
+		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.Synced.String())
 	}
 	return
 }
 
-// Sample is the sample
-func Sample() {
+// Elastic is the sample
+func Elastic() {
 	client := client()
 	_, err := client.CreateIndex("elasticbook").Do()
 	if err != nil {
