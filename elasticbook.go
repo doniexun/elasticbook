@@ -10,6 +10,9 @@ import (
 // https://godoc.org/gopkg.in/olivere/elastic.v3
 import "gopkg.in/olivere/elastic.v3"
 
+// IndexName is the Elasticsearch index
+const IndexName = "elasticbook"
+
 // Root is the root of the Bookmarks tree
 type Root struct {
 	Checksum string `json:"checksum"`
@@ -85,7 +88,7 @@ func Parse(b []byte) {
 // Elastic is the sample
 func Elastic() {
 	client := client()
-	_, err := client.CreateIndex("elasticbook").Do()
+	_, err := client.CreateIndex(IndexName).Do()
 	if err != nil {
 		// TODO: fix and check!
 		// panic(err)
