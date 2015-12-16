@@ -67,6 +67,11 @@ func main() {
 			b, _ := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
 			elasticbook.Parse(b)
 
+		} else if command == "index" {
+			b, _ := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
+			x := elasticbook.Parse(b)
+			elasticbook.Index(x)
+
 		} else if command == "elastic" {
 			elasticbook.Elastic()
 
