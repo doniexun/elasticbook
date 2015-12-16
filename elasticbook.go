@@ -42,15 +42,6 @@ func (b *Base) String() string {
 	return fmt.Sprintf("%s (%d)", b.Name, len(b.Children))
 }
 
-// Meta contains the attached metadata to the Bookmark entry
-type Meta struct {
-	StarsID        string `json:"stars.id"`
-	StarsImageData string `json:"stars.imageData"`
-	StarsIsSynced  string `json:"stars.isSynced"`
-	StarsPageData  string `json:"stars.pageData"`
-	StarsType      string `json:"stars.type"`
-}
-
 // Bookmark is a bookmark entry
 type Bookmark struct {
 	DateAdded              string `json:"date_added"`
