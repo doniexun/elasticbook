@@ -53,6 +53,59 @@ type Bookmark struct {
 	URL                    string `json:"url"`
 }
 
+func (b *Bookmark) toSafe() (bs *BookmarkSafe) {
+	bs = new(BookmarkSafe)
+	bs.DateAdded = b.DateAdded
+	bs.OriginalID = b.OriginalID
+	mis := b.MetaInfo.toSafe()
+	bs.MetaInfo = *mis
+	bs.Name = b.Name
+	bs.SyncTransactionVersion = b.SyncTransactionVersion
+	bs.Type = b.Type
+	bs.URL = b.URL
+	return
+}
+
+// BookmarkSafe is a bookmark entry with a sanitised MetaInfo
+type BookmarkSafe struct {
+	DateAdded              string   `json:"date_added"`
+	OriginalID             string   `json:"id"`
+	MetaInfo               MetaSafe `json:"meta_info,omitempty"`
+	Name                   string   `json:"name"`
+	SyncTransactionVersion string   `json:"sync_transaction_version"`
+	Type                   string   `json:"type"`
+	URL                    string   `json:"url"`
+}
+
+// Meta contains the attached metadata to the Bookmark entry
+type Meta struct {
+	StarsID        string `json:"stars.id"`
+	StarsImageData string `json:"stars.imageData"`
+	StarsIsSynced  string `json:"stars.isSynced"`
+	StarsPageData  string `json:"stars.pageData"`
+	StarsType      string `json:"stars.type"`
+}
+
+func (m *Meta) toSafe() (ms *MetaSafe) {
+	ms = new(MetaSafe)
+	ms.StarsID = m.StarsID
+	ms.StarsImageData = m.StarsImageData
+	ms.StarsIsSynced = m.StarsIsSynced
+	ms.StarsPageData = m.StarsPageData
+	ms.StarsType = m.StarsType
+	return
+}
+
+// MetaSafe contains the attached metadata to the Bookmark entry w/o
+// dots
+type MetaSafe struct {
+	StarsID        string `json:"stars_id"`
+	StarsImageData string `json:"stars_imageData"`
+	StarsIsSynced  string `json:"stars_isSynced"`
+	StarsPageData  string `json:"stars_pageData"`
+	StarsType      string `json:"stars_type"`
+}
+
 func client() *elastic.Client {
 	client, err := elastic.NewClient()
 	if err != nil {
@@ -62,7 +115,7 @@ func client() *elastic.Client {
 }
 
 // Parse run the JSON parser
-func Parse(b []byte) {
+func Parse(b []byte) *Root {
 	x := new(Root)
 	err := json.Unmarshal(b, &x)
 	if err != nil {
@@ -73,7 +126,41 @@ func Parse(b []byte) {
 		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.Other.String())
 		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.Synced.String())
 	}
-	return
+	return x
+}
+
+// Index takes a parsed structure and index all the Bookmarks entries
+func Index(x *Root) {
+	client := client()
+
+	if exists, _ := client.IndexExists(IndexName).Do(); !exists {
+		indicesCreateResult, err := client.CreateIndex(IndexName).Do()
+		if err != nil {
+			// TODO: fix and check!
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		} else {
+			fmt.Fprintf(os.Stdout, "%s (%t)\n", IndexName, indicesCreateResult.Acknowledged)
+		}
+	}
+
+	for i, b := range x.Roots.Synced.Children {
+		fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
+
+		// body, err := json.Marshal(b)
+		// fmt.Fprintf(os.Stdout, "%02d %s\n", i, body)
+
+		indexResponse, err := client.Index().
+			Index(IndexName).
+			Type("bookmark").
+			BodyJson(b.toSafe()).
+			Do()
+		if err != nil {
+			// TODO: Handle error
+			panic(err)
+		} else {
+			fmt.Fprintf(os.Stdout, "%+v\n", indexResponse)
+		}
+	}
 }
 
 // Elastic is the sample
