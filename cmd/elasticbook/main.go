@@ -63,12 +63,15 @@ func main() {
 				fmt.Printf("The answer is: %s\n", v)
 				return nil
 			})
-		} else if command == "load" {
+		} else if command == "parse" {
 			b, _ := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
 			elasticbook.Parse(b)
 
+		} else if command == "elastic" {
+			elasticbook.Elastic()
+
 		} else {
-			elasticbook.Sample()
+			fmt.Fprintf(os.Stdout, "unsupported command\n")
 		}
 	}
 
