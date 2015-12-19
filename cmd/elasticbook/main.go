@@ -67,6 +67,12 @@ func main() {
 			b := file()
 			elasticbook.Parse(b)
 
+		} else if command == "count" {
+			b := file()
+			r := elasticbook.Parse(b)
+			c := r.Count()
+			fmt.Fprintf(os.Stdout, "%+v", c)
+
 		} else if command == "index" {
 			b := file()
 			x := elasticbook.Parse(b)
