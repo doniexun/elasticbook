@@ -152,6 +152,18 @@ func (r *Root) Count() (c *CountResult) {
 
 	return
 }
+
+// Delete drops the index
+func Delete() {
+	client := Client()
+
+	_, err := client.DeleteIndex("elasticbook").Do()
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+}
+
 // Parse run the JSON parser
 func Parse(b []byte) *Root {
 	x := new(Root)
