@@ -78,8 +78,9 @@ func main() {
 			x := elasticbook.Parse(b)
 			elasticbook.Index(x)
 
-		} else if command == "elastic" {
-			elasticbook.Elastic()
+		} else if command == "delete" {
+			// TODO: add confirm request
+			elasticbook.Delete()
 
 		} else {
 			fmt.Fprintf(os.Stdout, "unsupported command\n")
