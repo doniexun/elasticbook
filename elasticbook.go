@@ -1,6 +1,7 @@
 package elasticbook
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -75,6 +76,27 @@ type BookmarkSafe struct {
 	SyncTransactionVersion string   `json:"sync_transaction_version"`
 	Type                   string   `json:"type"`
 	URL                    string   `json:"url"`
+}
+
+// CountResult contains the bookmarks counter
+type CountResult struct {
+	m map[string]int
+}
+
+// Add a key value to the count container
+func (c *CountResult) Add(k string, v int) {
+	if c.m == nil {
+		c.m = make(map[string]int)
+	}
+	c.m[k] = v
+}
+
+func (c *CountResult) String() string {
+	var buffer bytes.Buffer
+	for k := range c.m {
+		buffer.WriteString(fmt.Sprintf("- %s (%d)\n", k, c.m[k]))
+	}
+	return buffer.String()
 }
 
 // Meta contains the attached metadata to the Bookmark entry
