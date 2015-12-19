@@ -143,6 +143,15 @@ func Client() *elastic.Client {
 	return client
 }
 
+// Count returns a map with the RootFolder name and the count
+func (r *Root) Count() (c *CountResult) {
+	c = new(CountResult)
+	c.Add(r.Roots.BookmarkBar.Name, len(r.Roots.BookmarkBar.Children))
+	c.Add(r.Roots.Other.Name, len(r.Roots.Other.Children))
+	c.Add(r.Roots.Synced.Name, len(r.Roots.Synced.Children))
+
+	return
+}
 // Parse run the JSON parser
 func Parse(b []byte) *Root {
 	x := new(Root)
