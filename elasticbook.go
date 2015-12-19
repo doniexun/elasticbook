@@ -170,18 +170,14 @@ func Parse(b []byte) *Root {
 	err := json.Unmarshal(b, &x)
 	if err != nil {
 		panic(err.Error())
-	} else {
-		fmt.Fprintf(os.Stdout, "It Works!\n")
-		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.BookmarkBar.String())
-		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.Other.String())
-		fmt.Fprintf(os.Stdout, "\t- %s\n", x.Roots.Synced.String())
 	}
+
 	return x
 }
 
 // Index takes a parsed structure and index all the Bookmarks entries
 func Index(x *Root) {
-	client := client()
+	client := Client()
 
 	if exists, _ := client.IndexExists(IndexName).Do(); !exists {
 		indicesCreateResult, err := client.CreateIndex(IndexName).Do()
@@ -195,10 +191,6 @@ func Index(x *Root) {
 
 	for i, b := range x.Roots.Synced.Children {
 		fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
-
-		// body, err := json.Marshal(b)
-		// fmt.Fprintf(os.Stdout, "%02d %s\n", i, body)
-
 		indexResponse, err := client.Index().
 			Index(IndexName).
 			Type("bookmark").
@@ -213,86 +205,49 @@ func Index(x *Root) {
 	}
 }
 
-// Elastic is the sample
-func Elastic() {
-	client := client()
-	_, err := client.CreateIndex(IndexName).Do()
-	if err != nil {
-		// TODO: fix and check!
-		// panic(err)
-	}
+// Search is the API for searching
+func Search() {
+	client := Client()
 
-	// Add a document to the index
-	_, err = client.Index().
-		Index("elasticbook").
-		Type("bookmark").
-		Id("1").
-		BodyJson(new(interface{})).
-		// BodyJson(smpl).
-		Do()
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
-
-	// Search with a term query
 	termQuery := elastic.NewTermQuery("name", "slashdot")
+
 	searchResult, err := client.Search().
 		Index("elasticbook").
 		Query(termQuery).
-		Sort("user", true).
+		Sort("date_added", true).
 		From(0).Size(10).
 		Pretty(true).
 		Do()
+
 	if err != nil {
 		// Handle error
 		panic(err)
 	}
 
-	// searchResult is of type SearchResult and returns hits, suggestions,
-	// and all kinds of other information from Elasticsearch.
 	fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
 
-	// Each is a convenience function that iterates over hits in a search result.
-	// It makes sure you don't need to check for nil values in the response.
-	// However, it ignores errors in serialization. If you want full control
-	// over iterating the hits, see below.
 	var ttyp Bookmark
 	for _, item := range searchResult.Each(reflect.TypeOf(ttyp)) {
 		if t, ok := item.(Bookmark); ok {
 			fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
 		}
 	}
-	// TotalHits is another convenience function that works even when something goes wrong.
 	fmt.Printf("Found a total of %d tweets\n", searchResult.TotalHits())
 
-	// Here's how you iterate through results with full control over each step.
 	if searchResult.Hits != nil {
 		fmt.Printf("Found a total of %d tweets\n", searchResult.Hits.TotalHits)
 
-		// Iterate through results
 		for _, hit := range searchResult.Hits.Hits {
-			// hit.Index contains the name of the index
-
-			// Deserialize hit.Source into a Tweet (could also be just a map[string]interface{}).
 			var t Bookmark
 			err := json.Unmarshal(*hit.Source, &t)
 			if err != nil {
 				// Deserialization failed
 			}
 
-			// Work with tweet
 			fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
 		}
 	} else {
 		// No hits
-		fmt.Print("Found no tweets\n")
-	}
-
-	// Delete the index again
-	_, err = client.DeleteIndex("twitter").Do()
-	if err != nil {
-		// Handle error
-		panic(err)
+		fmt.Print("Found no Bookmarks\n")
 	}
 }
