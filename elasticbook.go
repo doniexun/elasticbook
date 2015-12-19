@@ -128,11 +128,18 @@ type MetaSafe struct {
 	StarsType      string `json:"stars_type"`
 }
 
-func client() *elastic.Client {
+// Client is a connection builder
+func Client() *elastic.Client {
 	client, err := elastic.NewClient()
 	if err != nil {
 		panic("Unable to create a ES client")
 	}
+
+	info, err := client.ClusterHealth().Do()
+	if err != nil {
+		panic(fmt.Sprintf("Unable to connect a ES client %+v\n", info))
+	}
+
 	return client
 }
 
