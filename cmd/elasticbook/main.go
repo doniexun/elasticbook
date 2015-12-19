@@ -64,11 +64,11 @@ func main() {
 				return nil
 			})
 		} else if command == "parse" {
-			b, _ := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
+			b := file()
 			elasticbook.Parse(b)
 
 		} else if command == "index" {
-			b, _ := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
+			b := file()
 			x := elasticbook.Parse(b)
 			elasticbook.Index(x)
 
@@ -81,4 +81,13 @@ func main() {
 	}
 
 	app.Run(os.Args)
+}
+
+func file() []byte {
+	b, err := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to load file (%s)", err.Error())
+		os.Exit(1)
+	}
+	return b
 }
