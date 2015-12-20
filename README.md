@@ -2,6 +2,41 @@
 
 Manage your Chrome bookmarks with Elasticsearch.
 
+## CLI Options
+
+### `help`
+
+```
+$ go run cmd/elasticbook/main.go -h
+NAME:
+   ElasticBook - Elasticsearch for your bookmarks
+
+USAGE:
+   /var/folders/mc/1wwp79ws30g1608y_hyzd7xr0000gn/T/go-build878109582/command-line-arguments/_obj/exe/main [global options] command [command options] [arguments...]
+
+VERSION:
+   0.0.0
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --command, -c  parse|index|count|delete|web|persist
+   --verbose, -V  I wanna read useless stuff
+   --help, -h   show help
+   --version, -v  print the version
+
+```
+
+### `count`
+
+```
+$ go run cmd/elasticbook/main.go -c count
+- Mobile Bookmarks (33)
+- Bookmarks Bar (9)
+- Other Bookmarks (10669)
+```
+
 ## Elasticsearch
 
 - https://www.elastic.co/guide/en/elasticsearch/guide
