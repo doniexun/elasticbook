@@ -164,11 +164,12 @@ func (r *Root) Count() (c *CountResult) {
 func Delete() {
 	client := Client()
 
-	_, err := client.DeleteIndex("elasticbook").Do()
+	r, err := client.DeleteIndex("elasticbook").Do()
 	if err != nil {
-		// Handle error
-		panic(err)
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
 	}
+	fmt.Fprintf(os.Stdout, "%+v\n", r)
 }
 
 // timeParse converts a date (a string representation of the number of

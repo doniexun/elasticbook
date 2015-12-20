@@ -25,12 +25,11 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Value:       "start",
-			Usage:       "",
+			Usage:       "parse|index|count|delete|web|persist",
 			Destination: &command,
 		},
 		cli.BoolFlag{
-			Name:        "verbose", //, v",
+			Name:        "verbose, V",
 			Usage:       "I wanna read useless stuff",
 			Destination: &verbose,
 		},
@@ -79,8 +78,12 @@ func main() {
 			elasticbook.Index(x)
 
 		} else if command == "delete" {
-			// TODO: add confirm request
-			elasticbook.Delete()
+			fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
+			if askForConfirmation() {
+				elasticbook.Delete()
+			} else {
+				fmt.Fprintf(os.Stdout, "Whatever\n\n")
+			}
 
 		} else {
 			fmt.Fprintf(os.Stdout, "unsupported command\n")
@@ -90,6 +93,41 @@ func main() {
 	app.Run(os.Args)
 }
 
+// askForConfirmation uses Scanln to parse user input. A user must type
+// in "yes" or "no" and then press enter. It has fuzzy matching, so "y",
+// "Y", "yes", "YES", and "Yes" all count as confirmations. If the input
+// is not recognized, it will ask again. The function does not return
+// until it gets a valid response from the user. Typically, you should
+// use fmt to print out a question before calling askForConfirmation.
+// E.g. fmt.Println("WARNING: Are you sure? (yes/no)")
+func askForConfirmation() bool {
+	const dflt string = "no"
+	var response string
+
+	_, err := fmt.Scanln(&response)
+	if err != nil && err.Error() == "unexpected newline" {
+		response = dflt
+	}
+
+	nokayResponses := []string{"n", "N", "no", "No", "NO"}
+	okayResponses := []string{"y", "Y", "yes", "Yes", "YES"}
+
+	if containsString(okayResponses, response) {
+		return true
+	} else if containsString(nokayResponses, response) {
+		return false
+	} else {
+		fmt.Fprintf(os.Stderr, "Please type yes|no and then press enter: ")
+	}
+	return askForConfirmation()
+}
+
+// containsString returns true iff slice contains element
+func containsString(slice []string, element string) bool {
+	return !(posString(slice, element) == -1)
+}
+
+// TODO: file is a huge WIP...
 func file() []byte {
 	b, err := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
 	if err != nil {
@@ -97,4 +135,15 @@ func file() []byte {
 		os.Exit(1)
 	}
 	return b
+}
+
+// posString returns the first index of element in slice.
+// If slice does not contain element, returns -1.
+func posString(slice []string, element string) int {
+	for i, e := range slice {
+		if e == element {
+			return i
+		}
+	}
+	return -1
 }
