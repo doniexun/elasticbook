@@ -41,6 +41,44 @@ $ go run cmd/elasticbook/main.go -c count
 
 - https://www.elastic.co/guide/en/elasticsearch/guide
 
+### A POQ (plain old query)
+
+```
+$ go run cmd/elasticbook/main.go -c index
+```
+
+Once you indexed all your data, try this:
+
+```
+POST elasticbook/bookmark/_search
+
+{
+  "sort": [
+    "_score",
+    {
+      "date_added": {
+        "order": "asc"
+      }
+    }
+  ],
+  "query": {
+    "filtered": {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "name": "elastic"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
 ## Elastic
 
 Elasticsearch client for Go.
