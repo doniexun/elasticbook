@@ -74,8 +74,10 @@ func main() {
 
 		} else if command == "index" {
 			b := file()
-			x := elasticbook.Parse(b)
-			elasticbook.Index(x)
+			r := elasticbook.Parse(b)
+			elasticbook.Index(r)
+			c := r.Count()
+			fmt.Fprintf(os.Stdout, "%+v", c)
 
 		} else if command == "delete" {
 			fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
