@@ -61,11 +61,11 @@ type Bookmark struct {
 	URL                    string `json:"url"`
 }
 
-func (b *Bookmark) toSafe() (bs *BookmarkSafe) {
-	bs = new(BookmarkSafe)
-	bs.DateAdded = b.DateAdded
+func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
+	bs = new(BookmarkIndexable)
+	bs.DateAdded = timeParse(b.DateAdded)
 	bs.OriginalID = b.OriginalID
-	mis := b.MetaInfo.toSafe()
+	mis := b.MetaInfo.toIndexable()
 	bs.MetaInfo = *mis
 	bs.Name = b.Name
 	bs.SyncTransactionVersion = b.SyncTransactionVersion
@@ -74,15 +74,15 @@ func (b *Bookmark) toSafe() (bs *BookmarkSafe) {
 	return
 }
 
-// BookmarkSafe is a bookmark entry with a sanitised MetaInfo
-type BookmarkSafe struct {
-	DateAdded              string   `json:"date_added"`
-	OriginalID             string   `json:"id"`
-	MetaInfo               MetaSafe `json:"meta_info,omitempty"`
-	Name                   string   `json:"name"`
-	SyncTransactionVersion string   `json:"sync_transaction_version"`
-	Type                   string   `json:"type"`
-	URL                    string   `json:"url"`
+// BookmarkIndexable is a bookmark entry with a sanitised MetaInfo
+type BookmarkIndexable struct {
+	DateAdded              time.Time     `json:"date_added"`
+	OriginalID             string        `json:"id"`
+	MetaInfo               MetaIndexable `json:"meta_info,omitempty"`
+	Name                   string        `json:"name"`
+	SyncTransactionVersion string        `json:"sync_transaction_version"`
+	Type                   string        `json:"type"`
+	URL                    string        `json:"url"`
 }
 
 // CountResult contains the bookmarks counter
@@ -115,8 +115,8 @@ type Meta struct {
 	StarsType      string `json:"stars.type"`
 }
 
-func (m *Meta) toSafe() (ms *MetaSafe) {
-	ms = new(MetaSafe)
+func (m *Meta) toIndexable() (ms *MetaIndexable) {
+	ms = new(MetaIndexable)
 	ms.StarsID = m.StarsID
 	ms.StarsImageData = m.StarsImageData
 	ms.StarsIsSynced = m.StarsIsSynced
@@ -125,9 +125,9 @@ func (m *Meta) toSafe() (ms *MetaSafe) {
 	return
 }
 
-// MetaSafe contains the attached metadata to the Bookmark entry w/o
+// MetaIndexable contains the attached metadata to the Bookmark entry w/o
 // dots
-type MetaSafe struct {
+type MetaIndexable struct {
 	StarsID        string `json:"stars_id"`
 	StarsImageData string `json:"stars_imageData"`
 	StarsIsSynced  string `json:"stars_isSynced"`
@@ -179,7 +179,7 @@ func Delete() {
 // Quoting:
 // From MSDN, FILETIME "Contains a 64-bit value representing the number of
 // 100-nanosecond intervals since January 1, 1601 (UTC)."
-func timeParse(microsecs string) string {
+func timeParse(microsecs string) time.Time {
 	t := time.Date(1601, time.January, 1, 0, 0, 0, 0, time.UTC)
 	m, err := strconv.ParseInt(microsecs, 10, 64)
 	if err != nil {
@@ -197,13 +197,13 @@ func timeParse(microsecs string) string {
 	var i int64
 	for i = 0; i < r; i++ {
 		t = t.Add(du)
-		fmt.Println(t)
 	}
 
 	t = t.Add(time.Duration(iRem) * time.Microsecond)
 
 	// RFC1123 = "Mon, 02 Jan 2006 15:04:05 MST"
-	return t.Format(time.RFC1123)
+	// t.Format(time.RFC1123)
+	return t
 }
 
 // Index takes a parsed structure and index all the Bookmarks entries
@@ -221,12 +221,14 @@ func Index(x *Root) {
 		}
 	}
 
+	// TODO: add BookmarkBar, Synced, Other
+
 	for i, b := range x.Roots.Synced.Children {
 		fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
 		indexResponse, err := client.Index().
 			Index(IndexName).
 			Type("bookmark").
-			BodyJson(b.toSafe()).
+			BodyJson(b.toIndexable()).
 			Do()
 		if err != nil {
 			// TODO: Handle error
@@ -245,6 +247,7 @@ func Parse(b []byte) *Root {
 		panic(err.Error())
 	}
 
+	fmt.Fprintf(os.Stdout, "Done\n")
 	return x
 }
 
