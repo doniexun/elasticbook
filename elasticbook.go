@@ -1,8 +1,10 @@
 package elasticbook
 
-// TODO: parse date
-// TODO: add mapping to date
-// TODO: add fulltext searc
+// DONE: parse date
+// DONE: add mapping to date
+// TODO: add fulltext search
+// TODO: add query CLI
+// TODO: add progress bar
 
 import (
 	"bytes"
@@ -12,7 +14,10 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
+
+	"github.com/gosuri/uiprogress"
 )
 
 // https://godoc.org/gopkg.in/olivere/elastic.v3
@@ -104,6 +109,15 @@ func (c *CountResult) String() string {
 		buffer.WriteString(fmt.Sprintf("- %s (%d)\n", k, c.m[k]))
 	}
 	return buffer.String()
+}
+
+// Total return the grand total of Bookmark entries parsed/indexed
+func (c *CountResult) Total() int {
+	var t int
+	for k := range c.m {
+		t += c.m[k]
+	}
+	return t
 }
 
 // Meta contains the attached metadata to the Bookmark entry
@@ -221,22 +235,69 @@ func Index(x *Root) {
 		}
 	}
 
-	// TODO: add BookmarkBar, Synced, Other
+	var wg sync.WaitGroup
+	var workForce = 5
+	ch := make(chan Bookmark, workForce)
 
-	for i, b := range x.Roots.Synced.Children {
-		fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
-		indexResponse, err := client.Index().
-			Index(IndexName).
-			Type("bookmark").
-			BodyJson(b.toIndexable()).
-			Do()
-		if err != nil {
-			// TODO: Handle error
-			panic(err)
-		} else {
-			fmt.Fprintf(os.Stdout, "%+v\n", indexResponse)
-		}
+	for i := 0; i < workForce; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var b Bookmark
+			var more bool
+
+			for {
+				b, more = <-ch
+				if more {
+					fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
+					indexResponse, err := client.Index().
+						Index(IndexName).
+						Type("bookmark").
+						BodyJson(b.toIndexable()).
+						Do()
+					if err != nil {
+						// TODO: Handle error
+						panic(err)
+					} else {
+						fmt.Fprintf(os.Stdout, "%+v\n", indexResponse)
+					}
+				} else {
+					return
+				}
+			}
+		}()
 	}
+
+	count := x.Count().Total()
+	bar := uiprogress.AddBar(count)
+	bar.AppendCompleted()
+	bar.PrependElapsed()
+	bar.PrependFunc(func(b *uiprogress.Bar) string {
+		return fmt.Sprintf("Node (%d/%d)", b.Current(), count)
+	})
+
+	uiprogress.Start()
+	for _, x := range x.Roots.BookmarkBar.Children {
+		ch <- x
+		bar.Incr()
+	}
+	for _, x := range x.Roots.Synced.Children {
+		ch <- x
+		bar.Incr()
+	}
+	for _, x := range x.Roots.Other.Children {
+		ch <- x
+		bar.Incr()
+	}
+
+	uiprogress.Stop()
+	close(ch)
+	wg.Wait()
+
+	// TODO: add BookmarkBar, Synced, Other
+	// x.Roots.BookmarkBar.Children
+	// x.Roots.Synced.Children
+	// x.Roots.Other.Children
 }
 
 // Parse run the JSON parser
