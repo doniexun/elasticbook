@@ -1,11 +1,18 @@
 package elasticbook
 
+// TODO: parse date
+// TODO: add mapping to date
+// TODO: add fulltext searc
+
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"reflect"
+	"strconv"
+	"time"
 )
 
 // https://godoc.org/gopkg.in/olivere/elastic.v3
@@ -164,15 +171,38 @@ func Delete() {
 	}
 }
 
-// Parse run the JSON parser
-func Parse(b []byte) *Root {
-	x := new(Root)
-	err := json.Unmarshal(b, &x)
+// timeParse converts a date (a string representation of the number of
+// microseconds from the 1601/01/01
+// https://chromium.googlesource.com/chromium/src/+/master/base/time/time_win.cc#56
+//
+// Quoting:
+// From MSDN, FILETIME "Contains a 64-bit value representing the number of
+// 100-nanosecond intervals since January 1, 1601 (UTC)."
+func timeParse(microsecs string) string {
+	t := time.Date(1601, time.January, 1, 0, 0, 0, 0, time.UTC)
+	m, err := strconv.ParseInt(microsecs, 10, 64)
 	if err != nil {
-		panic(err.Error())
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	var u int64 = 100000000000000
+	du := time.Duration(u) * time.Microsecond
+	f := float64(m)
+	x := float64(u)
+	n := f / x
+	r := int64(n)
+	remainder := math.Mod(f, x)
+	iRem := int64(remainder)
+	var i int64
+	for i = 0; i < r; i++ {
+		t = t.Add(du)
+		fmt.Println(t)
 	}
 
-	return x
+	t = t.Add(time.Duration(iRem) * time.Microsecond)
+
+	// RFC1123 = "Mon, 02 Jan 2006 15:04:05 MST"
+	return t.Format(time.RFC1123)
 }
 
 // Index takes a parsed structure and index all the Bookmarks entries
@@ -184,6 +214,7 @@ func Index(x *Root) {
 		if err != nil {
 			// TODO: fix and check!
 			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(1)
 		} else {
 			fmt.Fprintf(os.Stdout, "%s (%t)\n", IndexName, indicesCreateResult.Acknowledged)
 		}
@@ -203,6 +234,17 @@ func Index(x *Root) {
 			fmt.Fprintf(os.Stdout, "%+v\n", indexResponse)
 		}
 	}
+}
+
+// Parse run the JSON parser
+func Parse(b []byte) *Root {
+	x := new(Root)
+	err := json.Unmarshal(b, &x)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return x
 }
 
 // Search is the API for searching
