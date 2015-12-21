@@ -45,6 +45,8 @@ $ go run cmd/elasticbook/main.go -c count
 
 ```
 $ go run cmd/elasticbook/main.go -c index
+
+Node (9001/10870) 8m32s [=======================================================>------------]  83%
 ```
 
 Once you indexed all your data, try this:
