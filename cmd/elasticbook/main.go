@@ -82,6 +82,12 @@ func main() {
 			h := elasticbook.Health(c)
 			fmt.Fprintf(os.Stdout, "%+v\n\n", h)
 
+		} else if command == "version" {
+			// TODO: also check local if you want
+			// c := elasticbook.ClientRemote()
+			// h := elasticbook.Version(c)
+			// fmt.Fprintf(os.Stdout, "%+v", h)
+
 		} else if command == "index" {
 			b := file()
 			r := elasticbook.Parse(b)
