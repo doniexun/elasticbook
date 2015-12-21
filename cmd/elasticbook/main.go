@@ -76,6 +76,12 @@ func main() {
 			c := r.Count()
 			fmt.Fprintf(os.Stdout, "%+v", c)
 
+		} else if command == "health" {
+			// TODO: also check local if you want
+			c := elasticbook.ClientRemote()
+			h := elasticbook.Health(c)
+			fmt.Fprintf(os.Stdout, "%+v\n\n", h)
+
 		} else if command == "index" {
 			b := file()
 			r := elasticbook.Parse(b)
