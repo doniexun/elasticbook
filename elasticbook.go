@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"reflect"
@@ -153,12 +154,39 @@ type MetaIndexable struct {
 func Client() *elastic.Client {
 	client, err := elastic.NewClient()
 	if err != nil {
-		panic("Unable to create a ES client")
+		fmt.Fprintf(
+			os.Stderr,
+			"Unable to connect to a ES local cluster: %s ",
+			err.Error())
+		os.Exit(1)
 	}
 
-	info, err := client.ClusterHealth().Do()
+	return client
+}
+
+// ClientRemote connects to a remote ES cluster (Bonsai.io)
+// Debug with this:
+//   /_nodes/http?pretty=1
+// https://github.com/olivere/elastic/wiki/Connection-Problems
+func ClientRemote() *elastic.Client {
+	url := os.Getenv("BONSAIO_HOST")
+
+	client, err := elastic.NewClient(
+		elastic.SetURL(url),
+		elastic.SetScheme("https"),
+		elastic.SetMaxRetries(5),
+		elastic.SetSniff(false),
+		elastic.SetHealthcheckInterval(10*time.Second),
+		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
+		elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
+		elastic.SetBasicAuth(os.Getenv("BONSAIO_KEY"), os.Getenv("BONSAIO_SECRET")))
 	if err != nil {
-		panic(fmt.Sprintf("Unable to connect a ES client %+v\n", info))
+		fmt.Fprintf(
+			os.Stderr,
+			"Unable to connect to a ES remote cluster: (%s) %s ",
+			url,
+			err.Error())
+		os.Exit(1)
 	}
 
 	return client
@@ -184,6 +212,17 @@ func Delete() {
 		os.Exit(1)
 	}
 	fmt.Fprintf(os.Stdout, "%+v\n", r)
+}
+
+// Health check the status of the cluster
+func Health(c *elastic.Client) *elastic.ClusterHealthResponse {
+	info, err := c.ClusterHealth().Do()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect a ES client %+v\n", info)
+		os.Exit(1)
+	}
+
+	return info
 }
 
 // timeParse converts a date (a string representation of the number of
@@ -222,7 +261,7 @@ func timeParse(microsecs string) time.Time {
 
 // Index takes a parsed structure and index all the Bookmarks entries
 func Index(x *Root) {
-	client := Client()
+	client := ClientRemote()
 
 	if exists, _ := client.IndexExists(IndexName).Do(); !exists {
 		indicesCreateResult, err := client.CreateIndex(IndexName).Do()
@@ -248,21 +287,19 @@ func Index(x *Root) {
 
 			for {
 				b, more = <-ch
-				if more {
-					fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
-					indexResponse, err := client.Index().
-						Index(IndexName).
-						Type("bookmark").
-						BodyJson(b.toIndexable()).
-						Do()
-					if err != nil {
-						// TODO: Handle error
-						panic(err)
-					} else {
-						fmt.Fprintf(os.Stdout, "%+v\n", indexResponse)
-					}
-				} else {
+				if !more {
 					return
+				}
+				fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
+				_, err := client.Index().
+					Index(IndexName).
+					Type("bookmark").
+					BodyJson(b.toIndexable()).
+					Do()
+				if err != nil {
+					// TODO: Handle error
+					fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+					panic(err)
 				}
 			}
 		}()
@@ -308,7 +345,6 @@ func Parse(b []byte) *Root {
 		panic(err.Error())
 	}
 
-	fmt.Fprintf(os.Stdout, "Done\n")
 	return x
 }
 
@@ -357,4 +393,14 @@ func Search() {
 		// No hits
 		fmt.Print("Found no Bookmarks\n")
 	}
+}
+
+// Version check the version of the cluster
+func Version(c *elastic.Client, url string) string {
+	esversion, err := c.ElasticsearchVersion(url)
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+	return esversion
 }
