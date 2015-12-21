@@ -375,7 +375,9 @@ func (c *Client) Index(x *Root) {
 				if !more {
 					return
 				}
-				fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
+				if c.verbose {
+					// fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
+				}
 				_, err := client.Index().
 					Index(IndexName).
 					Type("bookmark").
