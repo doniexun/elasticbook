@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/user"
+	"path/filepath"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -67,6 +69,8 @@ func main() {
 			elasticbook.Parse(b)
 
 		} else if command == "count" {
+			fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
+
 			b := file()
 			r := elasticbook.Parse(b)
 			c := r.Count()
@@ -119,9 +123,24 @@ func askForConfirmation() bool {
 	} else if containsString(nokayResponses, response) {
 		return false
 	} else {
-		fmt.Fprintf(os.Stderr, "Please type yes|no and then press enter: ")
+		fmt.Fprintf(os.Stdout, "Please type yes|no and then press enter: ")
 	}
 	return askForConfirmation()
+}
+
+// bookmarksFile want to guess which is the local bookmarks DB from the
+// Chrome installation.
+// This one is from my OSX, brew-installed, Chrome.
+// "/Users/edoardo/Library/Application Support/Google/Chrome/Default/Bookmarks"
+func bookmarksFile() string {
+	user, err := user.Current()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "OS usupported? %s\n", err.Error())
+	}
+
+	return filepath.Join(
+		user.HomeDir, "Library", "Application Support",
+		"Google", "Chrome", "Default", "Bookmarks")
 }
 
 // containsString returns true iff slice contains element
@@ -129,9 +148,8 @@ func containsString(slice []string, element string) bool {
 	return !(posString(slice, element) == -1)
 }
 
-// TODO: file is a huge WIP...
 func file() []byte {
-	b, err := ioutil.ReadFile("/Users/edoardo/Downloads/bookmarks_20151215.json")
+	b, err := ioutil.ReadFile(bookmarksFile())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to load file (%s)", err.Error())
 		os.Exit(1)
