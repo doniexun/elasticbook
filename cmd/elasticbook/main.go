@@ -27,7 +27,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "parse|index|count|delete|web|persist",
+			Usage:       "parse|index|count|health|delete|web|persist",
 			Destination: &command,
 		},
 		cli.BoolFlag{
@@ -64,22 +64,24 @@ func main() {
 				fmt.Printf("The answer is: %s\n", v)
 				return nil
 			})
+
 		} else if command == "parse" {
 			b := file()
 			elasticbook.Parse(b)
+			fmt.Fprintf(os.Stdout, "Done\n\n")
 
 		} else if command == "count" {
 			fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
 
 			b := file()
 			r := elasticbook.Parse(b)
-			c := r.Count()
-			fmt.Fprintf(os.Stdout, "%+v", c)
+			n := r.Count()
+			fmt.Fprintf(os.Stdout, "%+v", n)
 
 		} else if command == "health" {
 			// TODO: also check local if you want
-			c := elasticbook.ClientRemote()
-			h := elasticbook.Health(c)
+			c, _ := elasticbook.ClientRemote()
+			h := c.Health()
 			fmt.Fprintf(os.Stdout, "%+v\n\n", h)
 
 		} else if command == "version" {
@@ -91,14 +93,16 @@ func main() {
 		} else if command == "index" {
 			b := file()
 			r := elasticbook.Parse(b)
-			elasticbook.Index(r)
-			c := r.Count()
-			fmt.Fprintf(os.Stdout, "%+v", c)
+			c, _ := elasticbook.ClientRemote()
+			c.Index(r)
+			count := r.Count()
+			fmt.Fprintf(os.Stdout, "%+v", count)
 
 		} else if command == "delete" {
 			fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
 			if askForConfirmation() {
-				elasticbook.Delete()
+				c, _ := elasticbook.ClientRemote()
+				c.Delete()
 			} else {
 				fmt.Fprintf(os.Stdout, "Whatever\n\n")
 			}

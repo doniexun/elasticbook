@@ -150,46 +150,130 @@ type MetaIndexable struct {
 	StarsType      string `json:"stars_type"`
 }
 
-// Client is a connection builder
-func Client() *elastic.Client {
-	client, err := elastic.NewClient()
+// client is a connection builder
+func client(remote bool) *elastic.Client {
+	var clnt *elastic.Client
+	var url string
+	var err error
+
+	if remote {
+		url = os.Getenv("BONSAIO_HOST")
+		clnt, err = elastic.NewClient(
+			elastic.SetURL(url),
+			elastic.SetScheme("https"),
+			elastic.SetMaxRetries(5),
+			elastic.SetSniff(false),
+			elastic.SetHealthcheckInterval(10*time.Second),
+			elastic.SetErrorLog(log.New(os.Stderr, "[elastic] ", log.LstdFlags)),
+			elastic.SetInfoLog(log.New(os.Stdout, "[elastic] ", log.LstdFlags)),
+			elastic.SetBasicAuth(
+				os.Getenv("BONSAIO_KEY"), os.Getenv("BONSAIO_SECRET")))
+
+	} else {
+		url = elastic.DefaultURL
+		clnt, err = elastic.NewClient(
+			elastic.SetURL(url))
+	}
+
 	if err != nil {
 		fmt.Fprintf(
 			os.Stderr,
-			"Unable to connect to a ES local cluster: %s ",
-			err.Error())
+			"Unable to connect to ES cluster: (%s) %s ", url, err.Error())
 		os.Exit(1)
 	}
 
-	return client
+	return clnt
+}
+
+const (
+	// DefaultRemote decides if the ES cluster is on Bonsai.io or it's local
+	DefaultRemote = false
+
+	// DefaultURL is the default ES local address
+	DefaultURL = "http://127.0.0.1:9200"
+
+	// DefaultVerbose decides if you wanna be bored by some noisy logs
+	DefaultVerbose = false
+)
+
+// ClientOptionFunc is a function that configures a Client.
+// It is used in NewClient.
+type ClientOptionFunc func(*Client) error
+
+// Client is the ElasticBook wrapper to an Elastic Client
+// The "elastic" package is really inspiring!
+type Client struct {
+	client  *elastic.Client
+	remote  bool
+	url     string
+	verbose bool
+}
+
+// NewClient Set up the default client
+func NewClient(options ...ClientOptionFunc) (*Client, error) {
+	c := &Client{
+		// client:  client(false),
+		remote:  DefaultRemote,
+		url:     DefaultURL,
+		verbose: DefaultVerbose,
+	}
+	for _, option := range options {
+		if err := option(c); err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
+}
+
+// SetElasticClient decide which kind of elastic Client use (local or remote)
+func SetElasticClient(elasticClient *elastic.Client) ClientOptionFunc {
+	return func(c *Client) error {
+		if elasticClient != nil {
+			c.client = elasticClient
+			c.remote = true
+		} else {
+			c.client = client(false)
+			c.remote = false
+		}
+		return nil
+	}
+}
+
+// SetVerbose define the verbose logging
+func SetVerbose(vvv bool) ClientOptionFunc {
+	return func(c *Client) error {
+		c.verbose = vvv
+		return nil
+	}
+}
+
+// SetURL define the current URL used (just for convenience)
+func SetURL(u string) ClientOptionFunc {
+	return func(c *Client) error {
+		if u != "" {
+			c.url = u
+		} else {
+			c.url = DefaultURL
+		}
+		return nil
+	}
+}
+
+// ClientLocal connects to a local ES cluster
+func ClientLocal() (*Client, error) {
+	return NewClient(
+		SetVerbose(true))
 }
 
 // ClientRemote connects to a remote ES cluster (Bonsai.io)
 // Debug with this:
 //   /_nodes/http?pretty=1
 // https://github.com/olivere/elastic/wiki/Connection-Problems
-func ClientRemote() *elastic.Client {
-	url := os.Getenv("BONSAIO_HOST")
-
-	client, err := elastic.NewClient(
-		elastic.SetURL(url),
-		elastic.SetScheme("https"),
-		elastic.SetMaxRetries(5),
-		elastic.SetSniff(false),
-		elastic.SetHealthcheckInterval(10*time.Second),
-		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
-		elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
-		elastic.SetBasicAuth(os.Getenv("BONSAIO_KEY"), os.Getenv("BONSAIO_SECRET")))
-	if err != nil {
-		fmt.Fprintf(
-			os.Stderr,
-			"Unable to connect to a ES remote cluster: (%s) %s ",
-			url,
-			err.Error())
-		os.Exit(1)
-	}
-
-	return client
+func ClientRemote() (*Client, error) {
+	return NewClient(
+		SetVerbose(true),
+		SetURL(os.Getenv("BONSAIO_HOST")),
+		SetElasticClient(client(true)))
 }
 
 // Count returns a map with the RootFolder name and the count
@@ -203,8 +287,8 @@ func (r *Root) Count() (c *CountResult) {
 }
 
 // Delete drops the index
-func Delete() {
-	client := Client()
+func (c *Client) Delete() {
+	client := c.client
 
 	r, err := client.DeleteIndex("elasticbook").Do()
 	if err != nil {
@@ -215,10 +299,11 @@ func Delete() {
 }
 
 // Health check the status of the cluster
-func Health(c *elastic.Client) *elastic.ClusterHealthResponse {
-	info, err := c.ClusterHealth().Do()
+func (c *Client) Health() *elastic.ClusterHealthResponse {
+	cl := c.client
+	info, err := cl.ClusterHealth().Do()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect a ES client %+v\n", info)
+		fmt.Fprintf(os.Stderr, "Unable to connect a ES client %+v\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -260,8 +345,8 @@ func timeParse(microsecs string) time.Time {
 }
 
 // Index takes a parsed structure and index all the Bookmarks entries
-func Index(x *Root) {
-	client := ClientRemote()
+func (c *Client) Index(x *Root) {
+	client := c.client
 
 	if exists, _ := client.IndexExists(IndexName).Do(); !exists {
 		indicesCreateResult, err := client.CreateIndex(IndexName).Do()
@@ -349,8 +434,8 @@ func Parse(b []byte) *Root {
 }
 
 // Search is the API for searching
-func Search() {
-	client := Client()
+func (c *Client) Search() {
+	client := c.client
 
 	termQuery := elastic.NewTermQuery("name", "slashdot")
 
