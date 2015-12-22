@@ -445,6 +445,11 @@ func (c *Client) Search() {
 	}
 }
 
+// URL returns the current ES client/cluster URL
+func (c *Client) URL() string {
+	return c.url
+}
+
 // Version check the version of the cluster
 func Version(c *elastic.Client, url string) string {
 	esversion, err := c.ElasticsearchVersion(url)
