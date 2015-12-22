@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,12 +24,18 @@ func main() {
 	app.Usage = "Elasticsearch for your bookmarks"
 
 	var command string
+	var term string
 	var verbose bool
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "parse|index|count|health|delete|web|persist",
+			Usage:       "-c [parse|index|count|health|delete|web|persist]",
 			Destination: &command,
+		},
+		cli.StringFlag{
+			Name:        "search, s",
+			Usage:       "-s [term]",
+			Destination: &term,
 		},
 		cli.BoolFlag{
 			Name:        "verbose, V",
@@ -38,6 +45,11 @@ func main() {
 	}
 
 	app.Action = func(cc *cli.Context) {
+		if command != "" && term != "" {
+			fmt.Fprintf(os.Stderr, "You cannot set a command AND make a search\n\n")
+			os.Exit(1)
+		}
+
 		if command == "web" {
 			m := martini.Classic()
 			m.Get("/", func() string {
@@ -136,9 +148,39 @@ func main() {
 			} else {
 				fmt.Fprintf(os.Stdout, "Whatever\n\n")
 			}
+		}
 
-		} else {
-			fmt.Fprintf(os.Stdout, "unsupported command\n")
+		if term != "" {
+			// TODO: also check local if you want
+			c, err := elasticbook.ClientRemote()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+				os.Exit(1)
+			}
+			sr, err := c.Search(term)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+				os.Exit(1)
+			}
+
+			fmt.Fprintf(os.Stdout, "Query took %d milliseconds\n", sr.TookInMillis)
+
+			if sr.Hits != nil {
+				fmt.Printf("Found a total of %d bookmarks\n", sr.Hits.TotalHits)
+
+				for _, hit := range sr.Hits.Hits {
+					var t elasticbook.Bookmark
+					err := json.Unmarshal(*hit.Source, &t)
+					if err != nil {
+						// Deserialization failed
+					}
+
+					fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
+				}
+			} else {
+				// No hits
+				fmt.Print("Found no Bookmarks\n")
+			}
 		}
 	}
 

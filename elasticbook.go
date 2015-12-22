@@ -2,9 +2,12 @@ package elasticbook
 
 // DONE: parse date
 // DONE: add mapping to date
+// DONE: add remote cluster
+// DONE: add indexing
 // TODO: add fulltext search
 // TODO: add query CLI
-// TODO: add progress bar
+// DONE: add progress bar
+// TODO: add ranged queries
 
 import (
 	"bytes"
@@ -13,7 +16,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -26,6 +28,9 @@ import "gopkg.in/olivere/elastic.v3"
 
 // IndexName is the Elasticsearch index
 const IndexName = "elasticbook"
+
+// DefaultFields is where to look when looking for bookmarks
+var DefaultFields = []string{"name", "url"}
 
 // Root is the root of the Bookmarks tree
 type Root struct {
@@ -398,51 +403,20 @@ func Parse(b []byte) (*Root, error) {
 }
 
 // Search is the API for searching
-func (c *Client) Search() {
+func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 	client := c.client
 
-	termQuery := elastic.NewTermQuery("name", "slashdot")
+	q := elastic.NewMultiMatchQuery(term, DefaultFields...)
 
-	searchResult, err := client.Search().
-		Index("elasticbook").
-		Query(termQuery).
+	sr, err := client.Search().
+		Index(IndexName).
+		Query(q).
 		Sort("date_added", true).
 		From(0).Size(10).
 		Pretty(true).
 		Do()
 
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
-
-	fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
-
-	var ttyp Bookmark
-	for _, item := range searchResult.Each(reflect.TypeOf(ttyp)) {
-		if t, ok := item.(Bookmark); ok {
-			fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
-		}
-	}
-
-	fmt.Printf("Found a total of %d bookmarks \n", searchResult.TotalHits())
-
-	if searchResult.Hits != nil {
-		fmt.Printf("Found a total of %d bookmarks\n", searchResult.Hits.TotalHits)
-
-		for _, hit := range searchResult.Hits.Hits {
-			var t Bookmark
-			err := json.Unmarshal(*hit.Source, &t)
-			if err != nil {
-				// Deserialization failed
-			}
-
-			fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
-		}
-	} else {
-		// No hits
-		fmt.Print("Found no Bookmarks\n")
-	}
+	return sr, err
 }
 
 // URL returns the current ES client/cluster URL
