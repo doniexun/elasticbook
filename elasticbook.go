@@ -424,10 +424,11 @@ func (c *Client) Search() {
 			fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
 		}
 	}
-	fmt.Printf("Found a total of %d tweets\n", searchResult.TotalHits())
+
+	fmt.Printf("Found a total of %d bookmarks \n", searchResult.TotalHits())
 
 	if searchResult.Hits != nil {
-		fmt.Printf("Found a total of %d tweets\n", searchResult.Hits.TotalHits)
+		fmt.Printf("Found a total of %d bookmarks\n", searchResult.Hits.TotalHits)
 
 		for _, hit := range searchResult.Hits.Hits {
 			var t Bookmark
