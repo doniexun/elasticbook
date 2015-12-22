@@ -391,14 +391,10 @@ func (c *Client) Index(x *Root) {
 }
 
 // Parse run the JSON parser
-func Parse(b []byte) *Root {
+func Parse(b []byte) (*Root, error) {
 	x := new(Root)
 	err := json.Unmarshal(b, &x)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	return x
+	return x, err
 }
 
 // Search is the API for searching
