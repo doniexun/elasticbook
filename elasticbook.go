@@ -34,6 +34,16 @@ type Root struct {
 	Roots    Roots  `json:"roots"`
 }
 
+// Count returns a map with the RootFolder name and the count
+func (r *Root) Count() (c *CountResult) {
+	c = new(CountResult)
+	c.Add(r.Roots.BookmarkBar.Name, len(r.Roots.BookmarkBar.Children))
+	c.Add(r.Roots.Other.Name, len(r.Roots.Other.Children))
+	c.Add(r.Roots.Synced.Name, len(r.Roots.Synced.Children))
+
+	return
+}
+
 // Roots is the container of the 4 main bookmark structure (high level)
 type Roots struct {
 	BookmarkBar            Base   `json:"bookmark_bar"`
@@ -274,16 +284,6 @@ func ClientRemote() (*Client, error) {
 		SetVerbose(true),
 		SetURL(os.Getenv("BONSAIO_HOST")),
 		SetElasticClient(client(true)))
-}
-
-// Count returns a map with the RootFolder name and the count
-func (r *Root) Count() (c *CountResult) {
-	c = new(CountResult)
-	c.Add(r.Roots.BookmarkBar.Name, len(r.Roots.BookmarkBar.Children))
-	c.Add(r.Roots.Other.Name, len(r.Roots.Other.Children))
-	c.Add(r.Roots.Synced.Name, len(r.Roots.Synced.Children))
-
-	return
 }
 
 // Delete drops the index
