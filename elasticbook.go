@@ -451,12 +451,16 @@ func (c *Client) URL() string {
 }
 
 // Version check the version of the cluster
-func Version(c *elastic.Client, url string) string {
-	esversion, err := c.ElasticsearchVersion(url)
+func (c *Client) Version() string {
+	client := c.client
+	esversion, err := client.ElasticsearchVersion(c.url)
 	if err != nil {
-		// Handle error
-		panic(err)
+		fmt.Fprintf(
+			os.Stderr,
+			"Unable to detect ES cluster version: (%s) %s ", c.url, err.Error())
+		os.Exit(1)
 	}
+
 	return esversion
 }
 
