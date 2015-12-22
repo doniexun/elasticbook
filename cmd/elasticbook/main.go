@@ -67,33 +67,58 @@ func main() {
 
 		} else if command == "parse" {
 			b := file()
-			elasticbook.Parse(b)
-			fmt.Fprintf(os.Stdout, "Done\n\n")
+			_, err := elasticbook.Parse(b)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
+			} else {
+				fmt.Fprintf(os.Stdout, "Your Bookmarks DB seems healthy\n\n")
+			}
 
 		} else if command == "count" {
 			fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
-
 			b := file()
-			r := elasticbook.Parse(b)
+			r, err := elasticbook.Parse(b)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
+				os.Exit(1)
+			}
+
 			n := r.Count()
 			fmt.Fprintf(os.Stdout, "%+v", n)
 
 		} else if command == "health" {
 			// TODO: also check local if you want
-			c, _ := elasticbook.ClientRemote()
+			c, err := elasticbook.ClientRemote()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+				os.Exit(1)
+			}
 			h := c.Health()
 			fmt.Fprintf(os.Stdout, "%+v\n\n", h)
 
 		} else if command == "version" {
 			// TODO: also check local if you want
-			// c := elasticbook.ClientRemote()
-			// h := elasticbook.Version(c)
-			// fmt.Fprintf(os.Stdout, "%+v", h)
+			c, err := elasticbook.ClientRemote()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+				os.Exit(1)
+			}
+			h := c.Version()
+			fmt.Fprintf(os.Stdout, "Elasticsearch version %+v (%s)\n\n", h, c.URL())
 
 		} else if command == "index" {
 			b := file()
-			r := elasticbook.Parse(b)
-			c, _ := elasticbook.ClientRemote()
+			r, err := elasticbook.Parse(b)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
+				os.Exit(1)
+			}
+			// TODO: also check local if you want
+			c, err := elasticbook.ClientRemote()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+				os.Exit(1)
+			}
 			c.Index(r)
 			count := r.Count()
 			fmt.Fprintf(os.Stdout, "%+v", count)
@@ -101,7 +126,12 @@ func main() {
 		} else if command == "delete" {
 			fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
 			if askForConfirmation() {
-				c, _ := elasticbook.ClientRemote()
+				// TODO: also check local if you want
+				c, err := elasticbook.ClientRemote()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+					os.Exit(1)
+				}
 				c.Delete()
 			} else {
 				fmt.Fprintf(os.Stdout, "Whatever\n\n")
