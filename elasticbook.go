@@ -310,40 +310,6 @@ func (c *Client) Health() *elastic.ClusterHealthResponse {
 	return info
 }
 
-// timeParse converts a date (a string representation of the number of
-// microseconds from the 1601/01/01
-// https://chromium.googlesource.com/chromium/src/+/master/base/time/time_win.cc#56
-//
-// Quoting:
-// From MSDN, FILETIME "Contains a 64-bit value representing the number of
-// 100-nanosecond intervals since January 1, 1601 (UTC)."
-func timeParse(microsecs string) time.Time {
-	t := time.Date(1601, time.January, 1, 0, 0, 0, 0, time.UTC)
-	m, err := strconv.ParseInt(microsecs, 10, 64)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
-	}
-	var u int64 = 100000000000000
-	du := time.Duration(u) * time.Microsecond
-	f := float64(m)
-	x := float64(u)
-	n := f / x
-	r := int64(n)
-	remainder := math.Mod(f, x)
-	iRem := int64(remainder)
-	var i int64
-	for i = 0; i < r; i++ {
-		t = t.Add(du)
-	}
-
-	t = t.Add(time.Duration(iRem) * time.Microsecond)
-
-	// RFC1123 = "Mon, 02 Jan 2006 15:04:05 MST"
-	// t.Format(time.RFC1123)
-	return t
-}
-
 // Index takes a parsed structure and index all the Bookmarks entries
 func (c *Client) Index(x *Root) {
 	client := c.client
@@ -490,4 +456,38 @@ func Version(c *elastic.Client, url string) string {
 		panic(err)
 	}
 	return esversion
+}
+
+// timeParse converts a date (a string representation of the number of
+// microseconds from the 1601/01/01
+// https://chromium.googlesource.com/chromium/src/+/master/base/time/time_win.cc#56
+//
+// Quoting:
+// From MSDN, FILETIME "Contains a 64-bit value representing the number of
+// 100-nanosecond intervals since January 1, 1601 (UTC)."
+func timeParse(microsecs string) time.Time {
+	t := time.Date(1601, time.January, 1, 0, 0, 0, 0, time.UTC)
+	m, err := strconv.ParseInt(microsecs, 10, 64)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	var u int64 = 100000000000000
+	du := time.Duration(u) * time.Microsecond
+	f := float64(m)
+	x := float64(u)
+	n := f / x
+	r := int64(n)
+	remainder := math.Mod(f, x)
+	iRem := int64(remainder)
+	var i int64
+	for i = 0; i < r; i++ {
+		t = t.Add(du)
+	}
+
+	t = t.Add(time.Duration(iRem) * time.Microsecond)
+
+	// RFC1123 = "Mon, 02 Jan 2006 15:04:05 MST"
+	// t.Format(time.RFC1123)
+	return t
 }
