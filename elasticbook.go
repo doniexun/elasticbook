@@ -4,6 +4,9 @@ package elasticbook
 // DONE: add mapping to date
 // DONE: add remote cluster
 // DONE: add indexing
+// TODO: add alias
+// TODO: switch alias
+// TODO: better query results
 // TODO: add fulltext search
 // TODO: add query CLI
 // DONE: add progress bar
@@ -28,6 +31,9 @@ import "gopkg.in/olivere/elastic.v3"
 
 // IndexName is the Elasticsearch index
 const IndexName = "elasticbook"
+
+// TypeName is the type used
+const TypeName = "bookmark"
 
 // DefaultFields is where to look when looking for bookmarks
 var DefaultFields = []string{"name", "url"}
@@ -351,7 +357,7 @@ func (c *Client) Index(x *Root) {
 				}
 				_, err := client.Index().
 					Index(IndexName).
-					Type("bookmark").
+					Type(TypeName).
 					BodyJson(b.toIndexable()).
 					Do()
 				if err != nil {
@@ -406,13 +412,20 @@ func Parse(b []byte) (*Root, error) {
 func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 	client := c.client
 
-	q := elastic.NewMultiMatchQuery(term, DefaultFields...)
+	q := elastic.NewMultiMatchQuery(term, DefaultFields...).
+		ZeroTermsQuery("none").
+		QueryName("elasticbookSearch").
+		PrefixLength(2).
+		Fuzziness("AUTO").
+		Type("most_fields")
 
 	sr, err := client.Search().
 		Index(IndexName).
+		Type(TypeName).
 		Query(q).
 		Sort("date_added", true).
-		From(0).Size(10).
+		From(0).
+		Size(100).
 		Pretty(true).
 		Do()
 
