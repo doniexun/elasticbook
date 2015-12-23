@@ -13,6 +13,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
+	"github.com/fatih/color"
 	"github.com/go-martini/martini"
 	"github.com/zeroed/elasticbook"
 )
@@ -47,6 +48,12 @@ func main() {
 	app.Action = func(cc *cli.Context) {
 		if command != "" && term != "" {
 			fmt.Fprintf(os.Stderr, "You cannot set a command AND make a search\n\n")
+			os.Exit(1)
+		}
+
+		if command == "" && term == "" {
+			fmt.Fprintf(os.Stdout, "You shuld set a command OR make a search\n\n")
+			cli.ShowAppHelp(cc)
 			os.Exit(1)
 		}
 
@@ -148,6 +155,12 @@ func main() {
 			} else {
 				fmt.Fprintf(os.Stdout, "Whatever\n\n")
 			}
+		} else {
+			if term == "" {
+				fmt.Fprintf(os.Stdout, "Command not supported\n\n")
+
+				cli.ShowAppHelp(cc)
+			}
 		}
 
 		if term != "" {
@@ -168,14 +181,23 @@ func main() {
 			if sr.Hits != nil {
 				fmt.Printf("Found a total of %d bookmarks\n", sr.Hits.TotalHits)
 
-				for _, hit := range sr.Hits.Hits {
+				// blue := color.New(color.FgBlue).SprintFunc()
+				red := color.New(color.FgRed).SprintFunc()
+				cyan := color.New(color.FgCyan).SprintFunc()
+				green := color.New(color.FgGreen).SprintFunc()
+				yellow := color.New(color.FgYellow).SprintFunc()
+
+				for i, hit := range sr.Hits.Hits {
 					var t elasticbook.Bookmark
 					err := json.Unmarshal(*hit.Source, &t)
 					if err != nil {
-						// Deserialization failed
+						fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 					}
 
-					fmt.Printf("Bookmark named %s: %s\n", t.Name, t.URL)
+					index := fmt.Sprintf("%02d", i)
+					fmt.Fprintf(os.Stdout, "%s] - %s [%s] (%s) {%s}\n",
+						cyan(index), green(t.Name), yellow(t.URL), t.DateAdded, red("0.0"))
+					// red(strconv.FormatFloat(hit.Score, 'f', 6, 64))
 				}
 			} else {
 				// No hits
