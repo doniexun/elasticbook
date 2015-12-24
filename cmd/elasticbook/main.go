@@ -196,8 +196,13 @@ func main() {
 
 					index := fmt.Sprintf("%02d", i)
 					fmt.Fprintf(os.Stdout, "%s] - %s [%s] (%s) {%s}\n",
-						cyan(index), green(t.Name), yellow(t.URL), t.DateAdded, red("0.0"))
-					// red(strconv.FormatFloat(hit.Score, 'f', 6, 64))
+						cyan(index), green(t.Name), yellow(t.URL), t.DateAdded,
+						red(fmt.Sprintf("%f", *hit.Score)),
+						// red(strconv.FormatFloat(hit.Score, 'f', 6, 64)),
+					)
+					if verbose {
+						fmt.Fprintf(os.Stdout, "%v\n", hit.Explanation)
+					}
 				}
 			} else {
 				// No hits
