@@ -417,13 +417,15 @@ func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 		QueryName("elasticbookSearch").
 		PrefixLength(2).
 		Fuzziness("AUTO").
-		Type("most_fields")
+		Type("most_fields").
+		FieldWithBoost("name", float64(2))
 
 	sr, err := client.Search().
 		Index(IndexName).
 		Type(TypeName).
 		Query(q).
-		Sort("date_added", true).
+		Explain(true).
+		// Sort("date_added", true). // No _score if this is enabled
 		From(0).
 		Size(100).
 		Pretty(true).
