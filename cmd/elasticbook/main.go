@@ -58,103 +58,21 @@ func main() {
 		}
 
 		if command == "web" {
-			m := martini.Classic()
-			m.Get("/", func() string {
-				return "Hello world!"
-			})
-			m.Run()
-
+			web()
 		} else if command == "persist" {
-			db, err := bolt.Open("db/my.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer db.Close()
-
-			db.Update(func(tx *bolt.Tx) error {
-				b := tx.Bucket([]byte("MyBucket"))
-				err := b.Put([]byte("answer"), []byte("42"))
-				return err
-			})
-
-			db.View(func(tx *bolt.Tx) error {
-				b := tx.Bucket([]byte("MyBucket"))
-				v := b.Get([]byte("answer"))
-				fmt.Printf("The answer is: %s\n", v)
-				return nil
-			})
-
+			persist()
 		} else if command == "parse" {
-			b := file()
-			_, err := elasticbook.Parse(b)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
-			} else {
-				fmt.Fprintf(os.Stdout, "Your Bookmarks DB seems healthy\n\n")
-			}
-
+			parse()
 		} else if command == "count" {
-			fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
-			b := file()
-			r, err := elasticbook.Parse(b)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
-				os.Exit(1)
-			}
-
-			n := r.Count()
-			fmt.Fprintf(os.Stdout, "%+v", n)
-
+			count()
 		} else if command == "health" {
-			// TODO: also check local if you want
-			c, err := elasticbook.ClientRemote()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-				os.Exit(1)
-			}
-			h := c.Health()
-			fmt.Fprintf(os.Stdout, "%+v\n\n", h)
-
+			health()
 		} else if command == "version" {
-			// TODO: also check local if you want
-			c, err := elasticbook.ClientRemote()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-				os.Exit(1)
-			}
-			h := c.Version()
-			fmt.Fprintf(os.Stdout, "Elasticsearch version %+v (%s)\n\n", h, c.URL())
-
+			version()
 		} else if command == "index" {
-			b := file()
-			r, err := elasticbook.Parse(b)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
-				os.Exit(1)
-			}
-			// TODO: also check local if you want
-			c, err := elasticbook.ClientRemote()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-				os.Exit(1)
-			}
-			c.Index(r)
-			count := r.Count()
-			fmt.Fprintf(os.Stdout, "%+v", count)
-
+			index()
 		} else if command == "delete" {
-			fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
-			if askForConfirmation() {
-				// TODO: also check local if you want
-				c, err := elasticbook.ClientRemote()
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-					os.Exit(1)
-				}
-				c.Delete()
-			} else {
-				fmt.Fprintf(os.Stdout, "Whatever\n\n")
-			}
+			deleteIndex()
 		} else {
 			if term == "" {
 				fmt.Fprintf(os.Stdout, "Command not supported\n\n")
@@ -164,50 +82,7 @@ func main() {
 		}
 
 		if term != "" {
-			// TODO: also check local if you want
-			c, err := elasticbook.ClientRemote()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-				os.Exit(1)
-			}
-			sr, err := c.Search(term)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-				os.Exit(1)
-			}
-
-			fmt.Fprintf(os.Stdout, "Query took %d milliseconds\n", sr.TookInMillis)
-
-			if sr.Hits != nil {
-				fmt.Printf("Found a total of %d bookmarks\n", sr.Hits.TotalHits)
-
-				// blue := color.New(color.FgBlue).SprintFunc()
-				red := color.New(color.FgRed).SprintFunc()
-				cyan := color.New(color.FgCyan).SprintFunc()
-				green := color.New(color.FgGreen).SprintFunc()
-				yellow := color.New(color.FgYellow).SprintFunc()
-
-				for i, hit := range sr.Hits.Hits {
-					var t elasticbook.Bookmark
-					err := json.Unmarshal(*hit.Source, &t)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-					}
-
-					index := fmt.Sprintf("%02d", i)
-					fmt.Fprintf(os.Stdout, "%s] - %s [%s] (%s) {%s}\n",
-						cyan(index), green(t.Name), yellow(t.URL), t.DateAdded,
-						red(fmt.Sprintf("%f", *hit.Score)),
-						// red(strconv.FormatFloat(hit.Score, 'f', 6, 64)),
-					)
-					if verbose {
-						fmt.Fprintf(os.Stdout, "%v\n", hit.Explanation)
-					}
-				}
-			} else {
-				// No hits
-				fmt.Print("Found no Bookmarks\n")
-			}
+			searchTerm(term, verbose)
 		}
 	}
 
@@ -263,6 +138,34 @@ func containsString(slice []string, element string) bool {
 	return !(posString(slice, element) == -1)
 }
 
+func count() {
+	fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
+	b := file()
+	r, err := elasticbook.Parse(b)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
+		os.Exit(1)
+	}
+
+	n := r.Count()
+	fmt.Fprintf(os.Stdout, "%+v", n)
+}
+
+func deleteIndex() {
+	fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
+	if askForConfirmation() {
+		// TODO: also check local if you want
+		c, err := elasticbook.ClientRemote()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(1)
+		}
+		c.Delete()
+	} else {
+		fmt.Fprintf(os.Stdout, "Whatever\n\n")
+	}
+}
+
 func file() []byte {
 	b, err := ioutil.ReadFile(bookmarksFile())
 	if err != nil {
@@ -270,6 +173,67 @@ func file() []byte {
 		os.Exit(1)
 	}
 	return b
+}
+
+func health() {
+	// TODO: also check local if you want
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	h := c.Health()
+	fmt.Fprintf(os.Stdout, "%+v\n\n", h)
+}
+
+func index() {
+
+	b := file()
+	r, err := elasticbook.Parse(b)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
+		os.Exit(1)
+	}
+	// TODO: also check local if you want
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	c.Index(r)
+	count := r.Count()
+	fmt.Fprintf(os.Stdout, "%+v", count)
+}
+
+func parse() {
+	b := file()
+	_, err := elasticbook.Parse(b)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
+	} else {
+		fmt.Fprintf(os.Stdout, "Your Bookmarks DB seems healthy\n\n")
+	}
+}
+
+func persist() {
+	db, err := bolt.Open("db/my.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("MyBucket"))
+		err := b.Put([]byte("answer"), []byte("42"))
+		return err
+	})
+
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("MyBucket"))
+		v := b.Get([]byte("answer"))
+		fmt.Printf("The answer is: %s\n", v)
+		return nil
+	})
 }
 
 // posString returns the first index of element in slice.
@@ -281,4 +245,70 @@ func posString(slice []string, element string) int {
 		}
 	}
 	return -1
+}
+
+func searchTerm(term string, verbose bool) {
+	// TODO: also check local if you want
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	sr, err := c.Search(term)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	fmt.Fprintf(os.Stdout, "Query took %d milliseconds\n", sr.TookInMillis)
+
+	if sr.Hits != nil {
+		fmt.Printf("Found a total of %d bookmarks\n", sr.Hits.TotalHits)
+
+		// blue := color.New(color.FgBlue).SprintFunc()
+		red := color.New(color.FgRed).SprintFunc()
+		cyan := color.New(color.FgCyan).SprintFunc()
+		green := color.New(color.FgGreen).SprintFunc()
+		yellow := color.New(color.FgYellow).SprintFunc()
+
+		for i, hit := range sr.Hits.Hits {
+			var t elasticbook.Bookmark
+			err := json.Unmarshal(*hit.Source, &t)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			}
+
+			index := fmt.Sprintf("%02d", i)
+			fmt.Fprintf(os.Stdout, "%s] - %s [%s] (%s) {%s}\n",
+				cyan(index), green(t.Name), yellow(t.URL), t.DateAdded,
+				red(fmt.Sprintf("%f", *hit.Score)),
+				// red(strconv.FormatFloat(hit.Score, 'f', 6, 64)),
+			)
+			if verbose {
+				fmt.Fprintf(os.Stdout, "%v\n", hit.Explanation)
+			}
+		}
+	} else {
+		// No hits
+		fmt.Print("Found no Bookmarks\n")
+	}
+}
+
+func version() {
+	// TODO: also check local if you want
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	h := c.Version()
+	fmt.Fprintf(os.Stdout, "Elasticsearch version %+v (%s)\n\n", h, c.URL())
+}
+
+func web() {
+	m := martini.Classic()
+	m.Get("/", func() string {
+		return "Hello world!"
+	})
+	m.Run()
 }
