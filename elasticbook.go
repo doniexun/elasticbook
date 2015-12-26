@@ -19,6 +19,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -29,8 +30,8 @@ import (
 // https://godoc.org/gopkg.in/olivere/elastic.v3
 import "gopkg.in/olivere/elastic.v3"
 
-// IndexName is the Elasticsearch index
-const IndexName = "elasticbook"
+// DefaultIndexName is the Elasticsearch index
+const DefaultIndexName = "elasticbook"
 
 // TypeName is the type used
 const TypeName = "bookmark"
@@ -310,29 +311,41 @@ func (c *Client) Delete() {
 }
 
 // Health check the status of the cluster
-func (c *Client) Health() *elastic.ClusterHealthResponse {
+func (c *Client) Health() (*elastic.ClusterHealthResponse, error) {
 	cl := c.client
-	info, err := cl.ClusterHealth().Do()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect a ES client %+v\n", err.Error())
-		os.Exit(1)
-	}
+	return cl.ClusterHealth().Do()
+}
 
-	return info
+// Indices returns the list of existing indices
+func (c *Client) Indices() ([]string, error) {
+	client := c.client
+	info, err := client.ClusterHealth().Do()
+	if err != nil {
+		return nil, err
+	}
+	indices := info.Indices
+	fmt.Printf("%+v\n", info)
+	var names []string
+	for k := range indices {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+	return names, nil
 }
 
 // Index takes a parsed structure and index all the Bookmarks entries
-func (c *Client) Index(x *Root) {
+func (c *Client) Index(x *Root) (bool, error) {
 	client := c.client
+	t := time.Now().UTC()
+	s := fmt.Sprintf("%d%02d%02dT%02d%02d%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
+	indexName := fmt.Sprintf("%s-%s", DefaultIndexName, s)
 
-	if exists, _ := client.IndexExists(IndexName).Do(); !exists {
-		indicesCreateResult, err := client.CreateIndex(IndexName).Do()
+	if exists, _ := client.IndexExists(indexName).Do(); !exists {
+		_, err := client.CreateIndex(indexName).Do()
 		if err != nil {
-			// TODO: fix and check!
-			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-			os.Exit(1)
-		} else {
-			fmt.Fprintf(os.Stdout, "%s (%t)\n", IndexName, indicesCreateResult.Acknowledged)
+			return false, err
 		}
 	}
 
@@ -352,11 +365,8 @@ func (c *Client) Index(x *Root) {
 				if !more {
 					return
 				}
-				if c.verbose {
-					// fmt.Fprintf(os.Stdout, "%02d %s : %s\n", i, b.Name, b.URL)
-				}
 				_, err := client.Index().
-					Index(IndexName).
+					Index(indexName).
 					Type(TypeName).
 					BodyJson(b.toIndexable()).
 					Do()
@@ -395,10 +405,7 @@ func (c *Client) Index(x *Root) {
 	close(ch)
 	wg.Wait()
 
-	// TODO: add BookmarkBar, Synced, Other
-	// x.Roots.BookmarkBar.Children
-	// x.Roots.Synced.Children
-	// x.Roots.Other.Children
+	return true, nil
 }
 
 // Parse run the JSON parser
@@ -421,7 +428,7 @@ func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 		FieldWithBoost("name", float64(2))
 
 	sr, err := client.Search().
-		Index(IndexName).
+		Index(DefaultIndexName).
 		Type(TypeName).
 		Query(q).
 		Explain(true).
