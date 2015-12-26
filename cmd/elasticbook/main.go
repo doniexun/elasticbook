@@ -30,7 +30,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "-c [parse|index|count|health|delete|web|persist]",
+			Usage:       "-c [alias|indices|index|count|health|parse|delete|web|persist]",
 			Destination: &command,
 		},
 		cli.StringFlag{
@@ -57,22 +57,26 @@ func main() {
 			os.Exit(1)
 		}
 
-		if command == "web" {
-			web()
-		} else if command == "persist" {
-			persist()
-		} else if command == "parse" {
-			parse()
+		if command == "alias" {
+			alias()
 		} else if command == "count" {
 			count()
-		} else if command == "health" {
-			health()
-		} else if command == "version" {
-			version()
-		} else if command == "index" {
-			index()
 		} else if command == "delete" {
 			deleteIndex()
+		} else if command == "indices" {
+			indices()
+		} else if command == "index" {
+			index()
+		} else if command == "health" {
+			health()
+		} else if command == "parse" {
+			parse()
+		} else if command == "persist" {
+			persist()
+		} else if command == "version" {
+			version()
+		} else if command == "web" {
+			web()
 		} else {
 			if term == "" {
 				fmt.Fprintf(os.Stdout, "Command not supported\n\n")
@@ -87,6 +91,9 @@ func main() {
 	}
 
 	app.Run(os.Args)
+}
+
+func alias() {
 }
 
 // askForConfirmation uses Scanln to parse user input. A user must type
@@ -182,12 +189,33 @@ func health() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	h := c.Health()
+	h, err := c.Health()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
 	fmt.Fprintf(os.Stdout, "%+v\n\n", h)
 }
 
-func index() {
+func indices() {
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	var ics []string
+	ics, err = c.Indices()
+	cyan := color.New(color.FgCyan).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
 
+	for i, x := range ics {
+		index := fmt.Sprintf("%02d", i)
+		fmt.Fprintf(os.Stdout, "%s] - %s\n",
+			cyan(index), yellow(x))
+	}
+}
+
+func index() {
 	b := file()
 	r, err := elasticbook.Parse(b)
 	if err != nil {
@@ -200,7 +228,13 @@ func index() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	c.Index(r)
+	_, err = c.Index(r)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	} else {
+		fmt.Fprintf(os.Stdout, "Index created (%t)\n", r)
+	}
 	count := r.Count()
 	fmt.Fprintf(os.Stdout, "%+v", count)
 }
