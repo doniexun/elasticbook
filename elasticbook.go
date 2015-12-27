@@ -319,15 +319,9 @@ func (c *Client) Health() (*elastic.ClusterHealthResponse, error) {
 // Indices returns the list of existing indices
 func (c *Client) Indices() ([]string, error) {
 	client := c.client
-	info, err := client.ClusterHealth().Do()
+	names, err := client.IndexNames()
 	if err != nil {
 		return nil, err
-	}
-	indices := info.Indices
-	fmt.Printf("%+v\n", info)
-	var names []string
-	for k := range indices {
-		names = append(names, k)
 	}
 	sort.Strings(names)
 	return names, nil
