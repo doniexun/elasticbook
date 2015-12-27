@@ -299,6 +299,16 @@ func ClientRemote() (*Client, error) {
 		SetElasticClient(client(true)))
 }
 
+// Alias creates an alias
+func (c *Client) Alias(indexName string, aliasName string) (bool, error) {
+	client := c.client
+	ack, err := client.Alias().Add(indexName, aliasName).Do()
+	if err != nil {
+		return false, err
+	}
+	return ack.Acknowledged, nil
+}
+
 // Aliases returns the list of existing aliases
 func (c *Client) Aliases() ([]string, error) {
 	client := c.client
