@@ -30,7 +30,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "-c [alias|indices|index|count|health|parse|delete|web|persist]",
+			Usage:       "-c [alias|aliases|indices|index|count|health|parse|delete|web|persist]",
 			Destination: &command,
 		},
 		cli.StringFlag{
@@ -58,7 +58,9 @@ func main() {
 		}
 
 		if command == "alias" {
-			alias()
+			alias(cc)
+		} else if command == "aliases" {
+			aliases()
 		} else if command == "count" {
 			count()
 		} else if command == "delete" {
@@ -79,7 +81,7 @@ func main() {
 			web()
 		} else {
 			if term == "" {
-				fmt.Fprintf(os.Stdout, "Command not supported\n\n")
+				fmt.Fprintf(os.Stderr, "Command not supported\n\n")
 
 				cli.ShowAppHelp(cc)
 			}
@@ -93,7 +95,62 @@ func main() {
 	app.Run(os.Args)
 }
 
-func alias() {
+func alias(cc *cli.Context) {
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	var indexName string
+	var aliasName string
+
+	fmt.Fprintf(os.Stdout, "Index name: ")
+	_, err = fmt.Scanln(&indexName)
+	if err != nil && err.Error() == "unexpected newline" {
+		alias(cc)
+	}
+
+	fmt.Fprintf(os.Stdout, "Alias name: ")
+	_, err = fmt.Scanln(&aliasName)
+	if err != nil && err.Error() == "unexpected newline" {
+		alias(cc)
+	}
+
+	ack, err := c.Alias(indexName, aliasName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	if ack {
+		aliases()
+	} else {
+		fmt.Fprintf(os.Stderr, "Cannot create your alias")
+		os.Exit(1)
+	}
+}
+
+func aliases() {
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	var ics []string
+	ics, err = c.Aliases()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	cyan := color.New(color.FgCyan).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+
+	for i, x := range ics {
+		index := fmt.Sprintf("%02d", i)
+		fmt.Fprintf(os.Stdout, "%s] - %s\n",
+			cyan(index), yellow(x))
+	}
 }
 
 // askForConfirmation uses Scanln to parse user input. A user must type
