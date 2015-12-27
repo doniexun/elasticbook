@@ -290,7 +290,7 @@ func index() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	} else {
-		fmt.Fprintf(os.Stdout, "Index created (%t)\n", r)
+		fmt.Fprintf(os.Stdout, "Index created \n")
 	}
 	count := r.Count()
 	fmt.Fprintf(os.Stdout, "%+v", count)

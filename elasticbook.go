@@ -188,7 +188,7 @@ func client(remote bool) *elastic.Client {
 			elastic.SetSniff(false),
 			elastic.SetHealthcheckInterval(10*time.Second),
 			elastic.SetErrorLog(log.New(os.Stderr, "[elastic] ", log.LstdFlags)),
-			elastic.SetInfoLog(log.New(os.Stdout, "[elastic] ", log.LstdFlags)),
+			// elastic.SetInfoLog(log.New(os.Stdout, "[elastic] ", log.LstdFlags)),
 			elastic.SetBasicAuth(
 				os.Getenv("BONSAIO_KEY"), os.Getenv("BONSAIO_SECRET")))
 
@@ -294,7 +294,7 @@ func ClientLocal() (*Client, error) {
 // https://github.com/olivere/elastic/wiki/Connection-Problems
 func ClientRemote() (*Client, error) {
 	return NewClient(
-		SetVerbose(true),
+		SetVerbose(false),
 		SetURL(os.Getenv("BONSAIO_HOST")),
 		SetElasticClient(client(true)))
 }
@@ -362,7 +362,7 @@ func (c *Client) Indices() ([]string, error) {
 func (c *Client) Index(x *Root) (bool, error) {
 	client := c.client
 	t := time.Now().UTC()
-	s := fmt.Sprintf("%d%02d%02dT%02d%02d%02d",
+	s := fmt.Sprintf("%d%02d%02d%02d%02d%02d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 	indexName := fmt.Sprintf("%s-%s", DefaultIndexName, s)
