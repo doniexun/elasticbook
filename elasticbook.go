@@ -21,6 +21,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -296,6 +297,26 @@ func ClientRemote() (*Client, error) {
 		SetVerbose(true),
 		SetURL(os.Getenv("BONSAIO_HOST")),
 		SetElasticClient(client(true)))
+}
+
+// Aliases returns the list of existing aliases
+func (c *Client) Aliases() ([]string, error) {
+	client := c.client
+	info, err := client.Aliases().Index("_all").Do()
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for k, v := range info.Indices {
+		var vs []string
+		for _, x := range v.Aliases {
+			vs = append(vs, x.AliasName)
+		}
+		kv := fmt.Sprintf("%s: [%s] \n", k, strings.Join(vs, ", "))
+		names = append(names, kv)
+	}
+	sort.Strings(names)
+	return names, nil
 }
 
 // Delete drops the index
