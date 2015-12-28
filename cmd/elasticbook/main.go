@@ -182,6 +182,19 @@ func askForConfirmation() bool {
 	return askForConfirmation()
 }
 
+func askForIndex(length int) int {
+	msg := ""
+	for {
+		fmt.Fprintf(os.Stdout, "[0-%02d]: %s ", length, msg)
+		var i int
+		_, err := fmt.Scanf("%d", &i)
+		if err == nil && i >= 0 && i <= length {
+			return i
+		}
+		msg = "(nope)"
+	}
+}
+
 // bookmarksFile want to guess which is the local bookmarks DB from the
 // Chrome installation.
 // This one is from my OSX, brew-installed, Chrome.
@@ -216,15 +229,17 @@ func count() {
 }
 
 func deleteIndex() {
-	fmt.Fprintf(os.Stdout, "Want to delete the existing index? [y/N]: ")
+	c, ics := indices()
+	if len(ics) == 0 {
+		fmt.Fprintf(os.Stderr, "There are no indexes\n")
+		os.Exit(1)
+	}
+
+	i := askForIndex(len(ics) - 1)
+	indexName := ics[i]
+	fmt.Fprintf(os.Stdout, "Want to delete the %s index? [y/N]: ", indexName)
 	if askForConfirmation() {
-		// TODO: also check local if you want
-		c, err := elasticbook.ClientRemote()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-			os.Exit(1)
-		}
-		c.Delete()
+		c.Delete(indexName)
 	} else {
 		fmt.Fprintf(os.Stdout, "Whatever\n\n")
 	}
@@ -254,7 +269,7 @@ func health() {
 	fmt.Fprintf(os.Stdout, "%+v\n\n", h)
 }
 
-func indices() {
+func indices() (*elasticbook.Client, []string) {
 	c, err := elasticbook.ClientRemote()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -270,6 +285,7 @@ func indices() {
 		fmt.Fprintf(os.Stdout, "%s] - %s\n",
 			cyan(index), yellow(x))
 	}
+	return c, ics
 }
 
 func index() {
