@@ -21,7 +21,7 @@ COMMANDS:
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --command, -c  parse|index|count|delete|web|persist
+   --command, -c  parse|index|indices|aliases|alias|count|delete|
    --verbose, -V  I wanna read useless stuff
    --help, -h   show help
    --version, -v  print the version
@@ -35,6 +35,66 @@ $ go run cmd/elasticbook/main.go -c count
 - Mobile Bookmarks (33)
 - Bookmarks Bar (9)
 - Other Bookmarks (10669)
+```
+
+### Delete index
+
+Sample usage (from `go run` code):
+
+```
+$ go run cmd/elasticbook/main.go -c delete
+00] - elasticbook-20151226224925
+01] - elasticbook-20151227201242
+02] - foobar
+[0-02]:  2
+Want to delete the foobar index? [y/N]: y
+&{Acknowledged:true}
+```
+
+### Create index
+
+Sample usage (from `go run` code):
+
+```
+$ go run cmd/elasticbook/main.go -c index
+Node (10960/10960) 10m3s [====================================================================] 100%
+Index created
+- Mobile Bookmarks (33)
+- Bookmarks Bar (9)
+- Other Bookmarks (10918)
+```
+
+### List indices
+
+Sample usage (from `go run` code):
+
+```
+$ go run cmd/elasticbook/main.go -c indices
+00] - elasticbook-20151227224924
+01] - elasticbook-20151228073443
+```
+
+### List aliases
+
+Sample usage (from `go run` code):
+
+```
+$ go run cmd/elasticbook/main.go -c aliases
+00] - elasticbook-20151227224924:     []
+01] - elasticbook-20151228073443:     []
+```
+
+### Create alias
+
+Sample usage (from `go run` code):
+
+```
+$ go run cmd/elasticbook/main.go -c alias
+Index name: elasticbook-20151228073443
+Alias name: default
+
+00] - elasticbook-20151227224924:     []
+01] - elasticbook-20151228073443:     [default]
 ```
 
 ## Elasticsearch
