@@ -322,7 +322,7 @@ func (c *Client) Aliases() ([]string, error) {
 		for _, x := range v.Aliases {
 			vs = append(vs, x.AliasName)
 		}
-		kv := fmt.Sprintf("%s: [%s] \n", k, strings.Join(vs, ", "))
+		kv := fmt.Sprintf("%s: \t\t[%s]", k, strings.Join(vs, ", "))
 		names = append(names, kv)
 	}
 	sort.Strings(names)
@@ -330,10 +330,10 @@ func (c *Client) Aliases() ([]string, error) {
 }
 
 // Delete drops the index
-func (c *Client) Delete() {
+func (c *Client) Delete(indexName string) {
 	client := c.client
 
-	r, err := client.DeleteIndex("elasticbook").Do()
+	r, err := client.DeleteIndex(indexName).Do()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
