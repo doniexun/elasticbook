@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/gosuri/uiprogress"
+	"github.com/zeroed/elasticbook/utils"
 )
 
 // https://godoc.org/gopkg.in/olivere/elastic.v3
