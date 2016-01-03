@@ -4,13 +4,16 @@ package elasticbook
 // DONE: add mapping to date
 // DONE: add remote cluster
 // DONE: add indexing
-// TODO: add alias
-// TODO: switch alias
-// TODO: better query results
+// DONE: add progress bar
+// DONE: better query results (score)
+// TODO: add alias creation
+// TODO: add alias deletion
+// TODO: add default alias creation
+// TODO: add alias switch
+// TODO: add alias check for double
+// TODO: add query time ranged
 // TODO: add fulltext search
 // TODO: add query CLI
-// DONE: add progress bar
-// TODO: add ranged queries
 
 import (
 	"bytes"
