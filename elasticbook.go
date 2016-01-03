@@ -434,7 +434,7 @@ func (c *Client) Index(x *Root) (bool, error) {
 }
 
 // Parse run the JSON parser
-func Parse(b []byte) (*Root, error) {
+func (c *Client) Parse(b []byte) (*Root, error) {
 	x := new(Root)
 	err := json.Unmarshal(b, &x)
 	return x, err
