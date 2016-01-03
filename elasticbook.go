@@ -6,10 +6,11 @@ package elasticbook
 // DONE: add indexing
 // DONE: add progress bar
 // DONE: better query results (score)
-// TODO: add alias creation
+// DONE: add counter in aliases/indices view
+// DONE: add alias creation
 // TODO: add alias deletion
 // TODO: add default alias creation
-// TODO: add alias switch
+// DONE: add alias switch
 // TODO: add alias check for double
 // TODO: add query time ranged
 // TODO: add fulltext search
