@@ -339,6 +339,40 @@ func (c *Client) Aliases() ([]string, error) {
 	return names, nil
 }
 
+// Default switch the default alias to the given index name (if it
+// exists).
+// Returns true if the switch is successful.
+func (c *Client) Default(indexName string) (bool, error) {
+	client := c.client
+
+	ia, err := c.indexAliases()
+	if err != nil {
+		return false, err
+	}
+
+	if _, ok := ia[indexName]; !ok {
+		err := fmt.Errorf("Index %s does not exists", indexName)
+		return false, err
+	}
+
+	aliasService := client.Alias()
+	for k, vs := range ia {
+		if utils.ContainsString(vs, DefaultAliasName) {
+			_, err := aliasService.Remove(k, DefaultAliasName).Do()
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+
+	ack, err := aliasService.Add(indexName, DefaultAliasName).Do()
+	if err != nil {
+		return false, err
+	}
+
+	return ack.Acknowledged, nil
+}
+
 // Delete drops the index
 func (c *Client) Delete(indexName string) {
 	client := c.client
