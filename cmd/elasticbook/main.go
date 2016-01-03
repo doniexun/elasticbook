@@ -29,7 +29,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "-c [alias|aliases|indices|index|count|health|parse|delete|web|persist]",
+			Usage:       "-c [alias|aliases|unalias|indices|index|count|health|parse|delete|web|persist]",
 			Destination: &command,
 		},
 		cli.StringFlag{
@@ -60,6 +60,8 @@ func main() {
 			alias()
 		} else if command == "aliases" {
 			aliases()
+		} else if command == "unalias" {
+			unalias()
 		} else if command == "count" {
 			count()
 		} else if command == "delete" {
@@ -329,6 +331,35 @@ func persist() {
 	})
 }
 
+func unalias() {
+	// TODO: maybe avoid multiple connections?
+	aliases()
+
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	var aliasName string
+
+	fmt.Fprintf(os.Stdout, "Delete alias name: ")
+	_, err = fmt.Scanln(&aliasName)
+	if err != nil && err.Error() == "unexpected newline" {
+		unalias()
+	}
+
+	ack, err := c.Unalias(aliasName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	if ack {
+		aliases()
+	} else {
+		fmt.Fprintf(os.Stderr, "Cannot delete your alias")
+		os.Exit(1)
 	}
 }
 
