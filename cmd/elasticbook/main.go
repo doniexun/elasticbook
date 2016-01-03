@@ -226,6 +226,8 @@ func count() {
 }
 
 func defaultAlias() {
+	aliases()
+
 	c, err := elasticbook.ClientRemote()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())

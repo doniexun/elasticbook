@@ -17,6 +17,7 @@ package elasticbook
 // TODO: refactor doubled code
 // TODO: add Doctor for recovery/rollback default index
 // TODO: add safety check when switching alias
+// TODO: add 'by-index' in defaultAlias CLI
 
 import (
 	"bytes"
