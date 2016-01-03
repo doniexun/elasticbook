@@ -38,6 +38,9 @@ import "gopkg.in/olivere/elastic.v3"
 // DefaultIndexName is the Elasticsearch index
 const DefaultIndexName = "elasticbook"
 
+// DefaultAliasName is the Elasticsearch alias used in Searches
+const DefaultAliasName = "elasticbookdefault"
+
 // TypeName is the type used
 const TypeName = "bookmark"
 
@@ -457,7 +460,7 @@ func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 		FieldWithBoost("name", float64(2))
 
 	sr, err := client.Search().
-		Index(DefaultIndexName).
+		Index(DefaultAliasName).
 		Type(TypeName).
 		Query(q).
 		Explain(true).
