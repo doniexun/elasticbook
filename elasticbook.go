@@ -473,6 +473,37 @@ func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 	return sr, err
 }
 
+// Unalias deletes an alias
+func (c *Client) Unalias(aliasName string) (bool, error) {
+	client := c.client
+	info, err := client.Aliases().Index("_all").Do()
+	if err != nil {
+		return false, err
+	}
+
+	names := make(map[string][]string)
+
+	for k, v := range info.Indices {
+		var vs []string
+		for _, x := range v.Aliases {
+			vs = append(vs, x.AliasName)
+		}
+		names[k] = vs
+	}
+
+	aliasService := client.Alias()
+	for k, vs := range names {
+		if utils.ContainsString(vs, aliasName) {
+			_, err := aliasService.Remove(k, aliasName).Do()
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+
+	return true, nil
+}
+
 // URL returns the current ES client/cluster URL
 func (c *Client) URL() string {
 	return c.url
