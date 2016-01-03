@@ -350,6 +350,10 @@ func (c *Client) Delete(indexName string) {
 	fmt.Fprintf(os.Stdout, "%+v\n", r)
 }
 
+// Doctor adds the Default alias to an index
+func (c *Client) Doctor() {
+}
+
 // Health check the status of the cluster
 func (c *Client) Health() (*elastic.ClusterHealthResponse, error) {
 	cl := c.client
