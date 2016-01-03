@@ -217,9 +217,15 @@ func containsString(slice []string, element string) bool {
 }
 
 func count() {
+	// TODO: also check local if you want
 	fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
 	b := file()
-	r, err := elasticbook.Parse(b)
+	r, err := c.Parse(b)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
 		os.Exit(1)
@@ -290,16 +296,16 @@ func indices() (*elasticbook.Client, []string) {
 }
 
 func index() {
-	b := file()
-	r, err := elasticbook.Parse(b)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
-		os.Exit(1)
-	}
 	// TODO: also check local if you want
 	c, err := elasticbook.ClientRemote()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	b := file()
+	r, err := c.Parse(b)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
 		os.Exit(1)
 	}
 	_, err = c.Index(r)
@@ -314,12 +320,22 @@ func index() {
 }
 
 func parse() {
+	// TODO: also check local if you want
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
 	b := file()
-	_, err := elasticbook.Parse(b)
+	cr, err := c.Parse(b)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
 	} else {
-		fmt.Fprintf(os.Stdout, "Your Bookmarks DB seems healthy\n\n")
+		fmt.Fprintf(
+			os.Stdout,
+			"Your Bookmarks DB seems healthy: %d bookmarks found\n\n",
+			cr.Count().Total())
 	}
 }
 
