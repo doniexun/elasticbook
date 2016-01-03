@@ -29,7 +29,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "-c [alias|aliases|unalias|indices|index|count|health|parse|delete|web|persist]",
+			Usage:       "-c [alias|aliases|unalias|default|indices|index|count|health|parse|delete|web|persist]",
 			Destination: &command,
 		},
 		cli.StringFlag{
@@ -64,6 +64,8 @@ func main() {
 			unalias()
 		} else if command == "count" {
 			count()
+		} else if command == "default" {
+			defaultAlias()
 		} else if command == "delete" {
 			deleteIndex()
 		} else if command == "indices" {
@@ -115,6 +117,14 @@ func alias() {
 	fmt.Fprintf(os.Stdout, "Alias name: ")
 	_, err = fmt.Scanln(&aliasName)
 	if err != nil && err.Error() == "unexpected newline" {
+		alias()
+	}
+
+	if aliasName == elasticbook.DefaultAliasName {
+		fmt.Fprintf(
+			os.Stderr,
+			"%s is the default alias name. Use `-c default` to assign the default index\n",
+			aliasName)
 		alias()
 	}
 
@@ -213,6 +223,35 @@ func count() {
 
 	n := r.Count()
 	fmt.Fprintf(os.Stdout, "%+v", n)
+}
+
+func defaultAlias() {
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	var indexName string
+
+	fmt.Fprintf(os.Stdout, "Index name: ")
+	_, err = fmt.Scanln(&indexName)
+	if err != nil && err.Error() == "unexpected newline" {
+		defaultAlias()
+	}
+
+	ack, err := c.Default(indexName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	if ack {
+		aliases()
+	} else {
+		fmt.Fprintf(os.Stderr, "Cannot switch default alias")
+		os.Exit(1)
+	}
 }
 
 func deleteIndex() {
