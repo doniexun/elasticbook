@@ -3,12 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
-	"os/user"
-	"path/filepath"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -16,6 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-martini/martini"
 	"github.com/zeroed/elasticbook"
+	"github.com/zeroed/elasticbook/utils"
 )
 
 func main() {
@@ -59,7 +57,7 @@ func main() {
 		}
 
 		if command == "alias" {
-			alias(cc)
+			alias()
 		} else if command == "aliases" {
 			aliases()
 		} else if command == "count" {
@@ -96,7 +94,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func alias(cc *cli.Context) {
+func alias() {
 	c, err := elasticbook.ClientRemote()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -109,13 +107,13 @@ func alias(cc *cli.Context) {
 	fmt.Fprintf(os.Stdout, "Index name: ")
 	_, err = fmt.Scanln(&indexName)
 	if err != nil && err.Error() == "unexpected newline" {
-		alias(cc)
+		alias()
 	}
 
 	fmt.Fprintf(os.Stdout, "Alias name: ")
 	_, err = fmt.Scanln(&aliasName)
 	if err != nil && err.Error() == "unexpected newline" {
-		alias(cc)
+		alias()
 	}
 
 	ack, err := c.Alias(indexName, aliasName)
@@ -173,9 +171,9 @@ func askForConfirmation() bool {
 	nokayResponses := []string{"n", "N", "no", "No", "NO"}
 	okayResponses := []string{"y", "Y", "yes", "Yes", "YES"}
 
-	if containsString(okayResponses, response) {
+	if utils.ContainsString(okayResponses, response) {
 		return true
-	} else if containsString(nokayResponses, response) {
+	} else if utils.ContainsString(nokayResponses, response) {
 		return false
 	} else {
 		fmt.Fprintf(os.Stdout, "Please type yes|no and then press enter: ")
@@ -196,35 +194,15 @@ func askForIndex(length int) int {
 	}
 }
 
-// bookmarksFile want to guess which is the local bookmarks DB from the
-// Chrome installation.
-// This one is from my OSX, brew-installed, Chrome.
-// "/Users/edoardo/Library/Application Support/Google/Chrome/Default/Bookmarks"
-func bookmarksFile() string {
-	user, err := user.Current()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "OS usupported? %s\n", err.Error())
-	}
-
-	return filepath.Join(
-		user.HomeDir, "Library", "Application Support",
-		"Google", "Chrome", "Default", "Bookmarks")
-}
-
-// containsString returns true iff slice contains element
-func containsString(slice []string, element string) bool {
-	return !(posString(slice, element) == -1)
-}
-
 func count() {
 	// TODO: also check local if you want
-	fmt.Fprintf(os.Stdout, "Working on %s\n", bookmarksFile())
+	fmt.Fprintf(os.Stdout, "Working on %s\n", utils.BookmarksFilePath())
 	c, err := elasticbook.ClientRemote()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	b := file()
+	b := utils.BookmarksFile()
 	r, err := c.Parse(b)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
@@ -250,15 +228,6 @@ func deleteIndex() {
 	} else {
 		fmt.Fprintf(os.Stdout, "Whatever\n\n")
 	}
-}
-
-func file() []byte {
-	b, err := ioutil.ReadFile(bookmarksFile())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to load file (%s)", err.Error())
-		os.Exit(1)
-	}
-	return b
 }
 
 func health() {
@@ -302,7 +271,7 @@ func index() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	b := file()
+	b := utils.BookmarksFile()
 	r, err := c.Parse(b)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
@@ -327,7 +296,7 @@ func parse() {
 		os.Exit(1)
 	}
 
-	b := file()
+	b := utils.BookmarksFile()
 	cr, err := c.Parse(b)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Your Bookmarks DB cannot be parsed, sorry\n\n")
@@ -360,15 +329,7 @@ func persist() {
 	})
 }
 
-// posString returns the first index of element in slice.
-// If slice does not contain element, returns -1.
-func posString(slice []string, element string) int {
-	for i, e := range slice {
-		if e == element {
-			return i
-		}
 	}
-	return -1
 }
 
 func searchTerm(term string, verbose bool) {
