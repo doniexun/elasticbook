@@ -23,6 +23,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "ElasticBook"
 	app.Usage = "Elasticsearch for your bookmarks"
+	app.Version = "0.0.1"
 
 	var command string
 	var term string
