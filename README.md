@@ -8,20 +8,22 @@ Manage your Chrome bookmarks with Elasticsearch.
 
 ```
 $ go run cmd/elasticbook/main.go -h
+
 NAME:
    ElasticBook - Elasticsearch for your bookmarks
 
 USAGE:
-   /var/folders/mc/1wwp79ws30g1608y_hyzd7xr0000gn/T/go-build878109582/command-line-arguments/_obj/exe/main [global options] command [command options] [arguments...]
+   main [global options] command [command options] [arguments...]
 
 VERSION:
-   0.0.0
+   0.0.1
 
 COMMANDS:
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --command, -c  parse|index|indices|aliases|alias|count|delete|
+   --command, -c  -c [alias|aliases|unalias|default|indices|index|count|health|parse|delete|web|persist]
+   --search, -s   -s [term]
    --verbose, -V  I wanna read useless stuff
    --help, -h   show help
    --version, -v  print the version
@@ -70,8 +72,9 @@ Sample usage (from `go run` code):
 
 ```
 $ go run cmd/elasticbook/main.go -c indices
-00] - elasticbook-20151227224924
-01] - elasticbook-20151228073443
+00] - elasticbook-20151227224924 (10956)
+01] - elasticbook-20151228093443 (10960)
+02] - elasticbook-20160103180734 (10979)
 ```
 
 ### List aliases
@@ -80,8 +83,9 @@ Sample usage (from `go run` code):
 
 ```
 $ go run cmd/elasticbook/main.go -c aliases
-00] - elasticbook-20151227224924:     []
-01] - elasticbook-20151228073443:     []
+00] - elasticbook-20151227224924 (10956)    [old]
+01] - elasticbook-20151228093443 (10960)    []
+02] - elasticbook-20160103180734 (10979)    [elasticbookdefault]
 ```
 
 ### Create alias
