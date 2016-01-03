@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -155,12 +156,14 @@ func aliases() {
 		os.Exit(1)
 	}
 	cyan := color.New(color.FgCyan).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
 
 	for i, x := range ics {
 		index := fmt.Sprintf("%02d", i)
-		fmt.Fprintf(os.Stdout, "%s] - %s\n",
-			cyan(index), yellow(x))
+		xs := strings.Split(x, ":")
+		fmt.Fprintf(os.Stdout, "%s] - %s%s\n",
+			cyan(index), green(xs[0]), yellow(xs[1]))
 	}
 }
 

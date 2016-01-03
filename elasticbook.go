@@ -328,14 +328,24 @@ func (c *Client) Aliases() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var names []string
-	for k, v := range info.Indices {
+
+	ins := info.Indices
+	names := make([]string, len(ins))
+	i := 0
+	for k, v := range ins {
 		var vs []string
 		for _, x := range v.Aliases {
 			vs = append(vs, x.AliasName)
 		}
-		kv := fmt.Sprintf("%s: \t\t[%s]", k, strings.Join(vs, ", "))
-		names = append(names, kv)
+
+		c, err := client.Count(k).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		kv := fmt.Sprintf("%s (%d): \t\t[%s]", k, c, strings.Join(vs, ", "))
+		names[i] = kv
+		i++
 	}
 	sort.Strings(names)
 	return names, nil
@@ -400,10 +410,20 @@ func (c *Client) Health() (*elastic.ClusterHealthResponse, error) {
 // Indices returns the list of existing indices
 func (c *Client) Indices() ([]string, error) {
 	client := c.client
-	names, err := client.IndexNames()
+	ins, err := client.IndexNames()
 	if err != nil {
 		return nil, err
 	}
+
+	names := make([]string, len(ins))
+	for i, n := range ins {
+		c, err := client.Count(n).Do()
+		if err != nil {
+			return names, err
+		}
+		names[i] = fmt.Sprintf("%s (%d)", n, c)
+	}
+
 	sort.Strings(names)
 	return names, nil
 }
