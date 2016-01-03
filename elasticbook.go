@@ -487,18 +487,18 @@ func (c *Client) Unalias(aliasName string) (bool, error) {
 		return false, err
 	}
 
-	names := make(map[string][]string)
+	indexAliases := make(map[string][]string)
 
 	for k, v := range info.Indices {
 		var vs []string
 		for _, x := range v.Aliases {
 			vs = append(vs, x.AliasName)
 		}
-		names[k] = vs
+		indexAliases[k] = vs
 	}
 
 	aliasService := client.Alias()
-	for k, vs := range names {
+	for k, vs := range indexAliases {
 		if utils.ContainsString(vs, aliasName) {
 			_, err := aliasService.Remove(k, aliasName).Do()
 			if err != nil {
@@ -527,6 +527,26 @@ func (c *Client) Version() string {
 	}
 
 	return esversion
+}
+
+func (c *Client) indexAliases() (map[string][]string, error) {
+	client := c.client
+	info, err := client.Aliases().Index("_all").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	ia := make(map[string][]string)
+
+	for k, v := range info.Indices {
+		var vs []string
+		for _, x := range v.Aliases {
+			vs = append(vs, x.AliasName)
+		}
+		ia[k] = vs
+	}
+
+	return ia, nil
 }
 
 // timeParse converts a date (a string representation of the number of
