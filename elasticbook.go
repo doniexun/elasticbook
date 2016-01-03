@@ -14,6 +14,8 @@ package elasticbook
 // TODO: add query time ranged
 // TODO: add fulltext search
 // TODO: add query CLI
+// TODO: refactor doubled code
+// TODO: add Doctor for recovery/rollback default index
 
 import (
 	"bytes"
