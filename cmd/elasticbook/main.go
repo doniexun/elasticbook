@@ -393,6 +393,14 @@ func unalias() {
 		unalias()
 	}
 
+	if aliasName == elasticbook.DefaultAliasName {
+		fmt.Fprintf(
+			os.Stderr,
+			"%s is the default alias name. Do not delete this, please\n",
+			aliasName)
+		unalias()
+	}
+
 	ack, err := c.Unalias(aliasName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())

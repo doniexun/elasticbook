@@ -8,7 +8,7 @@ package elasticbook
 // DONE: better query results (score)
 // DONE: add counter in aliases/indices view
 // DONE: add alias creation
-// TODO: add alias deletion
+// DONE: add alias deletion
 // TODO: add default alias creation
 // DONE: add alias switch
 // TODO: add alias check for double
