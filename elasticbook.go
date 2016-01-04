@@ -9,7 +9,7 @@ package elasticbook
 // DONE: add counter in aliases/indices view
 // DONE: add alias creation
 // DONE: add alias deletion
-// TODO: add default alias creation
+// DONE: add default alias creation
 // DONE: add alias switch
 // TODO: add alias check for double
 // TODO: add query time ranged
@@ -431,14 +431,22 @@ func (c *Client) Indices() ([]string, error) {
 // Index takes a parsed structure and index all the Bookmarks entries
 func (c *Client) Index(x *Root) (bool, error) {
 	client := c.client
-	t := time.Now().UTC()
-	s := fmt.Sprintf("%d%02d%02d%02d%02d%02d",
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second())
-	indexName := fmt.Sprintf("%s-%s", DefaultIndexName, s)
 
+	indexName := c.newIndexName()
 	if exists, _ := client.IndexExists(indexName).Do(); !exists {
 		_, err := client.CreateIndex(indexName).Do()
+		if err != nil {
+			return false, err
+		}
+	}
+
+	ins, err := client.IndexNames()
+	if err != nil {
+		return false, err
+	}
+
+	if len(ins) == 1 {
+		_, err := client.Alias().Add(indexName, DefaultIndexName).Do()
 		if err != nil {
 			return false, err
 		}
@@ -604,6 +612,14 @@ func (c *Client) indexAliases() (map[string][]string, error) {
 	}
 
 	return ia, nil
+}
+
+func (c *Client) newIndexName() string {
+	t := time.Now().UTC()
+	s := fmt.Sprintf("%d%02d%02d%02d%02d%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
+	return fmt.Sprintf("%s-%s", DefaultIndexName, s)
 }
 
 // timeParse converts a date (a string representation of the number of
