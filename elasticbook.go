@@ -11,7 +11,7 @@ package elasticbook
 // DONE: add alias deletion
 // DONE: add default alias creation
 // DONE: add alias switch
-// TODO: add alias check for double
+// TODO: add alias check for double/existing
 // TODO: add query time ranged
 // TODO: add fulltext search
 // TODO: add query CLI
