@@ -100,20 +100,18 @@ func main() {
 }
 
 func alias() {
-	c, err := elasticbook.ClientRemote()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+	c, _ := aliases()
+
+	ics, err := c.IndexNames()
+	if len(ics) == 0 {
+		fmt.Fprintf(os.Stderr, "There are no indexes\n")
 		os.Exit(1)
 	}
 
-	var indexName string
+	fmt.Fprintf(os.Stdout, "Index ")
+	i := askForIndex(len(ics) - 1)
+	indexName := ics[i]
 	var aliasName string
-
-	fmt.Fprintf(os.Stdout, "Index name: ")
-	_, err = fmt.Scanln(&indexName)
-	if err != nil && err.Error() == "unexpected newline" {
-		alias()
-	}
 
 	fmt.Fprintf(os.Stdout, "Alias name: ")
 	_, err = fmt.Scanln(&aliasName)
@@ -143,7 +141,7 @@ func alias() {
 	}
 }
 
-func aliases() {
+func aliases() (*elasticbook.Client, []string) {
 	c, err := elasticbook.ClientRemote()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -165,6 +163,8 @@ func aliases() {
 		fmt.Fprintf(os.Stdout, "%s] - %s%s\n",
 			cyan(index), green(xs[0]), yellow(xs[1]))
 	}
+
+	return c, ics
 }
 
 // askForConfirmation uses Scanln to parse user input. A user must type
@@ -207,6 +207,14 @@ func askForIndex(length int) int {
 		}
 		msg = "(nope)"
 	}
+}
+
+func chooseCollection(cns []string) int {
+	for i, cn := range cns {
+		fmt.Fprintf(os.Stdout, "[%d] %s\n", i, cn)
+	}
+	fmt.Fprintf(os.Stdout, "----\n")
+	return askForIndex(len(cns))
 }
 
 func count() {
@@ -266,8 +274,9 @@ func deleteIndex() {
 		os.Exit(1)
 	}
 
-	i := askForIndex(len(ics) - 1)
-	indexName := ics[i]
+	icNames, _ := c.IndexNames()
+	i := askForIndex(len(icNames) - 1)
+	indexName := icNames[i]
 	fmt.Fprintf(os.Stdout, "Want to delete the %s index? [y/N]: ", indexName)
 	if askForConfirmation() {
 		c.Delete(indexName)

@@ -18,6 +18,7 @@ package elasticbook
 // TODO: refactor doubled code
 // TODO: add Doctor for recovery/rollback default index
 // TODO: add safety check when switching alias
+// TODO: add 'by-index' in alias CLI
 // TODO: add 'by-index' in defaultAlias CLI
 
 import (
@@ -347,6 +348,7 @@ func (c *Client) Aliases() ([]string, error) {
 		names[i] = kv
 		i++
 	}
+
 	sort.Strings(names)
 	return names, nil
 }
@@ -426,6 +428,18 @@ func (c *Client) Indices() ([]string, error) {
 
 	sort.Strings(names)
 	return names, nil
+}
+
+// IndexNames returns the list of existing indices (just the names)
+func (c *Client) IndexNames() ([]string, error) {
+	client := c.client
+	ins, err := client.IndexNames()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Strings(ins)
+	return ins, nil
 }
 
 // Index takes a parsed structure and index all the Bookmarks entries
