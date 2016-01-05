@@ -11,14 +11,14 @@ package elasticbook
 // DONE: add alias deletion
 // DONE: add default alias creation
 // DONE: add alias switch
-// TODO: add alias check for double/existing
+// DONE: add alias check for double/existing
 // TODO: add query time ranged
 // TODO: add fulltext search
 // TODO: add query CLI
 // TODO: refactor doubled code
 // TODO: add Doctor for recovery/rollback default index
 // TODO: add safety check when switching alias
-// TODO: add 'by-index' in alias CLI
+// DONE: add 'by-index' in alias CLI
 // TODO: add 'by-index' in defaultAlias CLI
 
 import (
