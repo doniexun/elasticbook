@@ -245,13 +245,10 @@ func defaultAlias() {
 		os.Exit(1)
 	}
 
-	var indexName string
-
 	fmt.Fprintf(os.Stdout, "Index name: ")
-	_, err = fmt.Scanln(&indexName)
-	if err != nil && err.Error() == "unexpected newline" {
-		defaultAlias()
-	}
+	icNames, _ := c.IndexNames()
+	i := askForIndex(len(icNames) - 1)
+	indexName := icNames[i]
 
 	ack, err := c.Default(indexName)
 	if err != nil {
@@ -309,12 +306,12 @@ func indices() (*elasticbook.Client, []string) {
 	var ics []string
 	ics, err = c.Indices()
 	cyan := color.New(color.FgCyan).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
 
 	for i, x := range ics {
 		index := fmt.Sprintf("%02d", i)
 		fmt.Fprintf(os.Stdout, "%s] - %s\n",
-			cyan(index), yellow(x))
+			cyan(index), green(x))
 	}
 	return c, ics
 }
