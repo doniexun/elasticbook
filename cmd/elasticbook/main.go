@@ -136,7 +136,7 @@ func alias() {
 	if ack {
 		aliases()
 	} else {
-		fmt.Fprintf(os.Stderr, "Cannot create your alias")
+		fmt.Fprintf(os.Stderr, "Cannot create your alias. Maybe is already there...\n")
 		os.Exit(1)
 	}
 }
