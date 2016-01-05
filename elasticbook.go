@@ -312,8 +312,20 @@ func ClientRemote() (*Client, error) {
 		SetElasticClient(client(true)))
 }
 
-// Alias creates an alias
+// Alias creates an alias.
+// It's enforced a constraint though: "No more than one index per alias"
+// This means that, if the alias already exists, this method returns
+// false.
 func (c *Client) Alias(indexName string, aliasName string) (bool, error) {
+	existingAliases, err := c.AliasNames()
+	if err != nil {
+		return false, err
+	}
+
+	if utils.ContainsString(existingAliases, aliasName) {
+		return false, nil
+	}
+
 	client := c.client
 	ack, err := client.Alias().Add(indexName, aliasName).Do()
 	if err != nil {
