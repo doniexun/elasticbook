@@ -322,6 +322,29 @@ func (c *Client) Alias(indexName string, aliasName string) (bool, error) {
 	return ack.Acknowledged, nil
 }
 
+// AliasNames returns the list of existing aliases (just the names,
+// sorted).
+// Due to the constraint enforced by Client#Alias this slice should not
+// contains dupes (^_^)
+func (c *Client) AliasNames() ([]string, error) {
+	client := c.client
+	info, err := client.Aliases().Index("_all").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	ins := info.Indices
+	var aliasNames []string
+	for _, v := range ins {
+		for _, x := range v.Aliases {
+			aliasNames = append(aliasNames, x.AliasName)
+		}
+	}
+
+	sort.Strings(aliasNames)
+	return aliasNames, nil
+}
+
 // Aliases returns the list of existing aliases
 func (c *Client) Aliases() ([]string, error) {
 	client := c.client
