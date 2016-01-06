@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -53,7 +55,18 @@ func main() {
 
 	app.Action = func(cc *cli.Context) {
 		if sweb {
-			web.Start()
+			_, filename, _, _ := runtime.Caller(0)
+			println(filename)
+			templateDir := filepath.Join(filename, "..", "..", "..", "web", "templates")
+			println(templateDir)
+			wapp, err := web.NewApp(
+				web.SetVerbose(false),
+				web.SetTemplateDir(templateDir))
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Unable to start WebInterface: %s\n", err)
+				os.Exit(1)
+			}
+			wapp.Start()
 			os.Exit(0)
 		}
 
