@@ -12,9 +12,9 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
-	"github.com/go-martini/martini"
 	"github.com/zeroed/elasticbook"
 	"github.com/zeroed/elasticbook/utils"
+	"github.com/zeroed/elasticbook/web"
 )
 
 func main() {
@@ -26,12 +26,18 @@ func main() {
 
 	var command string
 	var term string
+	var sweb bool
 	var verbose bool
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "-c [alias|aliases|unalias|default|indices|index|count|health|parse|delete|web|persist]",
+			Usage:       "-c [alias|aliases|unalias|default|indices|index|count|health|parse|delete]",
 			Destination: &command,
+		},
+		cli.BoolFlag{
+			Name:        "web, w",
+			Usage:       "Starts the web interface",
+			Destination: &sweb,
 		},
 		cli.StringFlag{
 			Name:        "search, s",
@@ -46,6 +52,11 @@ func main() {
 	}
 
 	app.Action = func(cc *cli.Context) {
+		if sweb {
+			web.Start()
+			os.Exit(0)
+		}
+
 		if command != "" && term != "" {
 			fmt.Fprintf(os.Stderr, "You cannot set a command AND make a search\n\n")
 			os.Exit(1)
@@ -77,12 +88,8 @@ func main() {
 			health()
 		} else if command == "parse" {
 			parse()
-		} else if command == "persist" {
-			persist()
 		} else if command == "version" {
 			version()
-		} else if command == "web" {
-			web()
 		} else {
 			if term == "" {
 				fmt.Fprintf(os.Stderr, "Command not supported\n\n")
@@ -477,12 +484,4 @@ func version() {
 	}
 	h := c.Version()
 	fmt.Fprintf(os.Stdout, "Elasticsearch version %+v (%s)\n\n", h, c.URL())
-}
-
-func web() {
-	m := martini.Classic()
-	m.Get("/", func() string {
-		return "Hello world!"
-	})
-	m.Run()
 }
