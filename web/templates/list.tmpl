@@ -1,10 +1,32 @@
+{{ if .show}}
 <h1>Results</h1>
-{{range .}}
-  <div> {{.Title}} - {{.Url}} ({{.Score}})</div>
+<table class="pure-table pure-table-horizontal">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>URL</th>
+      <th>Score</th>
+      <th>Date Added</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {{range .results}}
+    <tr>
+      <td>{{.Index}}</td>
+      <td>{{.Title}}</td>
+      <td><code><a href={{.URL}}>{{.URL}}</a></code></td>
+      <td>{{.Score}}</td>
+      <td>{{.DateAdded}}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
 {{ end }}
 
 <h1>Search</h1>
 <form action="/elasticbook/search" method="POST" class="pure-form">
-  <input type="text" term="term" placeholder="term" />
+  <input type="text" name="term" placeholder="term" />
   <input type="submit" value="submit" class="pure-button pure-button-primary"/>
 </form>

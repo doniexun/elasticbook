@@ -1,9 +1,15 @@
 package web
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/binding"
 	"github.com/martini-contrib/render"
+	"github.com/zeroed/elasticbook"
 )
 
 const (
@@ -65,12 +71,57 @@ type Search struct {
 	Term    string `form:"term" binding:"required"`
 }
 
-func (a *App) newSearch(s Search, r render.Render) {
+// Result is the result of a search
+type Result struct {
+	Index     int
+	URL       string
+	Title     string
+	DateAdded string
+	Score     float64
+}
+
+func (a *App) newSearch(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
+	sr, err := cl.Search(s.Term)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	nmap := map[string]interface{}{"show": false, "results": nil}
+	if sr.Hits != nil {
+		log.Printf("Found a total of %d bookmarks\n", sr.Hits.TotalHits)
+
+		list := make([]Result, len(sr.Hits.Hits))
+		for i, hit := range sr.Hits.Hits {
+			var t elasticbook.Bookmark
+			err := json.Unmarshal(*hit.Source, &t)
+			if err != nil {
+				continue
+			}
+
+			list[i] = Result{
+				Index:     i,
+				Title:     t.Name,
+				URL:       t.URL,
+				DateAdded: t.DateAdded,
+				Score:     *hit.Score}
+		}
+		nmap = map[string]interface{}{"show": true, "results": list}
+
+	}
+	r.HTML(200, "list", nmap)
 }
 
 // Start open a local server
 func (a *App) Start() {
+	cl, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
 	m := martini.Classic()
+	m.Map(cl)
 	m.Use(martini.Static("public"))
 	m.Use(render.Renderer(render.Options{
 		Directory:       a.templates,                // Specify what path to load the templates from.
@@ -85,10 +136,13 @@ func (a *App) Start() {
 	m.Get("/", func() string { return "Hello world!" })
 
 	m.Group("/elasticbook", func(r martini.Router) {
+
 		m.Get("/", func(r render.Render) {
 			r.HTML(200, "list", nil)
 		})
+
 		r.Post("/search", binding.Bind(Search{}), a.newSearch)
 	})
+
 	m.Run()
 }
