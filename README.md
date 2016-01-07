@@ -101,6 +101,25 @@ Alias name: default
 01] - elasticbook-20151228073443:     [default]
 ```
 
+## Web interface
+
+```
+$ go run cmd/cli/main.go --web
+[martini] listening on :3000 (development)
+[martini] Started POST /elasticbook/search for [::1]:51415
+[martini] Found a total of 20 bookmarks
+[martini] Completed 200 OK in 461.663807ms
+```
+
+Base search:
+
+![base search](https://cloud.githubusercontent.com/assets/456318/12184665/efb071a6-b596-11e5-92a9-c49dc19748e5.png)
+
+Look for _elastic_ and found these:
+
+![results](https://cloud.githubusercontent.com/assets/456318/12184666/efd03fcc-b596-11e5-9ec5-ced6d369ade3.png)
+
+
 ## Elasticsearch
 
 - https://www.elastic.co/guide/en/elasticsearch/guide
