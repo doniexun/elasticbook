@@ -56,9 +56,7 @@ func main() {
 	app.Action = func(cc *cli.Context) {
 		if sweb {
 			_, filename, _, _ := runtime.Caller(0)
-			println(filename)
 			templateDir := filepath.Join(filename, "..", "..", "..", "web", "templates")
-			println(templateDir)
 			wapp, err := web.NewApp(
 				web.SetVerbose(false),
 				web.SetTemplateDir(templateDir))
