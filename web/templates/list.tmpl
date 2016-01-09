@@ -1,34 +1,38 @@
 {{ if .show}}
-<h1>Results</h1>
-<table class="pure-table pure-table-horizontal">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>URL</th>
-      <th>Score</th>
-      <th>Date Added</th>
-    </tr>
-  </thead>
+<div class="pure-g">
+  <div class="pure-u-7-8 center">
+    <h1>Results</h1>
+    <table class="pure-table pure-table-horizontal">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>URL</th>
+          <th>Score</th>
+          <th>Date Added</th>
+        </tr>
+      </thead>
 
-  <tbody>
-    {{range .results}}
-    <tr>
-      <td>{{.Index}}</td>
-      <td>{{.Title}}</td>
-      <td><code><a href="{{.URL}}">{{.URL}}</a></code></td>
-      <td>{{.Score}}</td>
-      <td>{{.DateAdded}}</td>
-    </tr>
-    {{ end }}
-  </tbody>
-</table>
+      <tbody>
+        {{range .results}}
+        <tr>
+          <td>{{.Index}}</td>
+          <td>{{.Title}}</td>
+          <td><code><a href="{{.URL}}">{{.URL}}</a></code></td>
+          <td>{{.Score}}</td>
+          <td>{{.DateAdded}}</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
 {{ end }}
 
 <h1 class="is-center">Search</h1>
 
 <div class="pure-g">
-  <form action="/elasticbook/search" method="POST" class="pure-form pure-form-stacked pure-u-4-5 center">
+  <form action="/elasticbook/search" method="POST" class="pure-form pure-form-stacked pure-u-4-5 center search-form">
     <div class="pure-g">
       <!-- <div class="pure-u-2-24"></div> -->
       <!-- <div class="pure-u-20-24 center"></div> -->
