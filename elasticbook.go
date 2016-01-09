@@ -21,6 +21,7 @@ package elasticbook
 // TODO: add safety check when switching alias
 // DONE: add 'by-index' in alias CLI
 // DONE: add 'by-index' in defaultAlias CLI
+// TODO: search sentences
 
 import (
 	"bytes"
