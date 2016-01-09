@@ -80,7 +80,33 @@ type Result struct {
 	Score     float64
 }
 
-func (a *App) newSearch(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
+// IndexAlias contains an index name and its aliases
+type IndexAlias struct {
+	Index int
+	Name  string
+}
+
+func (a *App) aliases(cl *elasticbook.Client, r render.Render, log *log.Logger) {
+	sr, err := cl.Aliases()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	list := make([]IndexAlias, len(sr))
+	for i, ia := range sr {
+		list[i] = IndexAlias{
+			Index: i,
+			Name:  ia,
+		}
+	}
+
+	nmap := map[string]interface{}{"show": true, "results": list}
+	r.HTML(200, "aliases", nmap)
+	return
+}
+
+func (a *App) search(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
 	sr, err := cl.Search(s.Term)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -110,6 +136,7 @@ func (a *App) newSearch(cl *elasticbook.Client, s Search, r render.Render, log *
 
 	}
 	r.HTML(200, "list", nmap)
+	return
 }
 
 // Start open a local server
@@ -133,7 +160,10 @@ func (a *App) Start() {
 		HTMLContentType: render.ContentHTML,
 	}))
 
-	m.Get("/", func() string { return "Hello world!" })
+	m.Get("/", func(r render.Render) {
+		r.Redirect("/elasticbook")
+		return
+	})
 
 	m.Group("/elasticbook", func(r martini.Router) {
 
@@ -141,7 +171,8 @@ func (a *App) Start() {
 			r.HTML(200, "list", nil)
 		})
 
-		r.Post("/search", binding.Bind(Search{}), a.newSearch)
+		r.Get("/aliases", a.aliases)
+		r.Post("/search", binding.Bind(Search{}), a.search)
 	})
 
 	m.Run()
