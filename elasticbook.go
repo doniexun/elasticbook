@@ -105,6 +105,12 @@ type Bookmark struct {
 	URL                    string `json:"url"`
 }
 
+// NameSuggest contains the input for the suggestion engine
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters-completion.html
+type NameSuggest struct {
+	Input []string `json:"input"`
+}
+
 func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
 	bs = new(BookmarkIndexable)
 	bs.DateAdded = timeParse(b.DateAdded)
