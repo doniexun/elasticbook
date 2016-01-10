@@ -767,6 +767,15 @@ func (c *Client) putDefaultMapping(indexName string) bool {
 	return true
 }
 
+func stripchars(str, chr string) string {
+	return strings.Map(func(r rune) rune {
+		if strings.IndexRune(chr, r) < 0 {
+			return r
+		}
+		return -1
+	}, str)
+}
+
 // timeParse converts a date (a string representation of the number of
 // microseconds from the 1601/01/01
 // https://chromium.googlesource.com/chromium/src/+/master/base/time/time_win.cc#56
