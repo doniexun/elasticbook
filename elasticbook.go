@@ -467,6 +467,17 @@ func (c *Client) Indices() ([]string, error) {
 	return names, nil
 }
 
+// Mappings returns the current index mapping
+func (c *Client) Mappings() (map[string]interface{}, error) {
+	client := c.client
+	ms := client.GetMapping()
+	mappings, err := ms.Index(DefaultAliasName).Pretty(true).Do()
+	if err != nil {
+		return nil, err
+	}
+	return mappings, nil
+}
+
 // IndexNames returns the list of existing indices (just the names)
 func (c *Client) IndexNames() ([]string, error) {
 	client := c.client
