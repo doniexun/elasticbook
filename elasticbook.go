@@ -118,6 +118,7 @@ func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
 	mis := b.MetaInfo.toIndexable()
 	bs.MetaInfo = *mis
 	bs.Name = b.Name
+	bs.NameSuggest = NameSuggest{strings.Fields(stripchars(b.Name, ",.-_"))}
 	bs.SyncTransactionVersion = b.SyncTransactionVersion
 	bs.Type = b.Type
 	bs.URL = b.URL
@@ -130,6 +131,7 @@ type BookmarkIndexable struct {
 	OriginalID             string        `json:"id"`
 	MetaInfo               MetaIndexable `json:"meta_info,omitempty"`
 	Name                   string        `json:"name"`
+	NameSuggest            NameSuggest   `json:"name_suggest"`
 	SyncTransactionVersion string        `json:"sync_transaction_version"`
 	Type                   string        `json:"type"`
 	URL                    string        `json:"url"`
