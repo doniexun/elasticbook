@@ -107,6 +107,16 @@ type Bookmark struct {
 
 // NameSuggest contains the input for the suggestion engine
 // https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters-completion.html
+// Example:
+//   POST /elasticbook-20160110174219/bookmark/_suggest?pretty
+// {
+//    "name_suggest" : {
+//        "text" : "Medium",
+//        "completion" : {
+//            "field" : "name_suggest"
+//        }
+//    }
+//	}
 type NameSuggest struct {
 	Input []string `json:"input"`
 }
