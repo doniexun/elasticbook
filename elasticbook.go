@@ -502,6 +502,8 @@ func (c *Client) Index(x *Root) (bool, error) {
 		}
 	}
 
+	c.putDefaultMapping(indexName)
+
 	ins, err := client.IndexNames()
 	if err != nil {
 		return false, err
@@ -682,6 +684,81 @@ func (c *Client) newIndexName() string {
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 	return fmt.Sprintf("%s-%s", DefaultIndexName, s)
+}
+
+func (c *Client) putDefaultMapping(indexName string) bool {
+	mappings := `{
+		"bookmark" : {
+      "properties" : {
+        "date_added" : {
+          "type" : "date",
+          "format" : "dateOptionalTime"
+        },
+        "id" : {
+          "type" : "string"
+        },
+        "meta_info" : {
+          "properties" : {
+            "stars_id" : {
+              "type" : "string"
+            },
+            "stars_imageData" : {
+              "type" : "string"
+            },
+            "stars_isSynced" : {
+              "type" : "string"
+            },
+            "stars_pageData" : {
+              "type" : "string"
+            },
+            "stars_type" : {
+              "type" : "string"
+            }
+          }
+        },
+        "name" : {
+          "type" : "string"
+        },
+				name_suggest": {
+               "type": "completion",
+               "index_analyzer": "simple",
+               "search_analyzer": "simple",
+               "payloads": false
+        },
+        "sync_transaction_version" : {
+          "type" : "string"
+        },
+        "type" : {
+          "type" : "string"
+        },
+        "url" : {
+          "type" : "string"
+        }
+      }
+    }
+	}`
+
+	client := c.client
+	putresp, err := client.
+		PutMapping().
+		Index(indexName).
+		Type(TypeName).
+		BodyString(mappings).
+		Do()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "expected put mapping to succeed; got: %v", err)
+		return false
+	}
+	if putresp == nil {
+		fmt.Fprintf(os.Stderr, "expected put mapping response; got: %v", putresp)
+		return false
+	}
+	if !putresp.Acknowledged {
+		fmt.Fprintf(os.Stderr, "expected put mapping ack; got: %v", putresp.Acknowledged)
+		return false
+	}
+
+	return true
 }
 
 // timeParse converts a date (a string representation of the number of
