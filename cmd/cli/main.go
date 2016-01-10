@@ -33,7 +33,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "command, c",
-			Usage:       "-c [alias|aliases|unalias|default|indices|index|count|health|parse|delete]",
+			Usage:       "-c [alias|aliases|unalias|default|indices|index|mappings|count|health|parse|delete]",
 			Destination: &command,
 		},
 		cli.BoolFlag{
@@ -91,12 +91,14 @@ func main() {
 			defaultAlias()
 		} else if command == "delete" {
 			deleteIndex()
+		} else if command == "health" {
+			health()
 		} else if command == "indices" {
 			indices()
 		} else if command == "index" {
 			index()
-		} else if command == "health" {
-			health()
+		} else if command == "mappings" {
+			mappings()
 		} else if command == "parse" {
 			parse()
 		} else if command == "version" {
@@ -356,6 +358,30 @@ func index() {
 	}
 	count := r.Count()
 	fmt.Fprintf(os.Stdout, "%+v", count)
+}
+
+func mappings() {
+	c, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	mpgs, err := c.Mappings()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	cyan := color.New(color.FgCyan).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+
+	i := 0
+	for k, v := range mpgs {
+		index := fmt.Sprintf("%02d", i)
+		fmt.Fprintf(os.Stdout, "%s] - %s: %+v\n",
+			cyan(index), green(k), yellow(v))
+		i++
+	}
 }
 
 func parse() {
