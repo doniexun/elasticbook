@@ -101,6 +101,119 @@ Alias name: default
 01] - elasticbook-20151228073443:     [default]
 ```
 
+## The mapping
+
+Here the mapping used. There is a "name_suggest" for the completion.
+
+```
+{
+  "elasticbook-20160111213240" : {
+    "mappings" : {
+      "bookmark" : {
+        "properties" : {
+          "date_added" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "meta_info" : {
+            "properties" : {
+              "stars_id" : {
+                "type" : "string"
+              },
+              "stars_imageData" : {
+                "type" : "string"
+              },
+              "stars_isSynced" : {
+                "type" : "string"
+              },
+              "stars_pageData" : {
+                "type" : "string"
+              },
+              "stars_type" : {
+                "type" : "string"
+              }
+            }
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "name_suggest" : {
+            "type" : "completion",
+            "analyzer" : "simple",
+            "payloads" : false,
+            "preserve_separators" : true,
+            "preserve_position_increments" : true,
+            "max_input_length" : 50
+          },
+          "sync_transaction_version" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Suggestion?
+
+Yep, it's easy.
+
+For instance: look for "ela" in this way:
+
+```
+POST /elasticbook-20160111213240/_suggest?pretty -d '{
+    "yup" : {
+        "text" : "ela",
+        "completion" : {
+            "field" : "name_suggest"
+        }
+    }
+} '
+```
+
+And you'll receive this helpful suggestions:
+
+```
+{
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "failed" : 0
+  },
+  "yup" : [ {
+    "text" : "ela",
+    "offset" : 0,
+    "length" : 3,
+    "options" : [ {
+      "text" : "ElasticSearch profiles index - Wiki",
+      "score" : 14.0
+    }, {
+      "text" : "Blog - Bonsai - Hosted Elasticsearch",
+      "score" : 14.0
+    }, {
+      "text" : "Elasticsearch - Installing Plugins",
+      "score" : 14.0
+    }, {
+      "text" : "Bonsai - Hosted Elasticsearch",
+      "score" : 14.0
+    }, {
+      "text" : "Discuss Elasticsearch, Logstash and Kibana | Elastic",
+      "score" : 14.0
+    } ]
+  } ]
+}
+```
+
 ## Web interface
 
 ```
