@@ -119,7 +119,7 @@ type Bookmark struct {
 //	}
 type NameSuggest struct {
 	Input   []string `json:"input"`
-	Oputput []string `json:"output"`
+	Oputput string   `json:"output"`
 }
 
 func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
@@ -131,7 +131,7 @@ func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
 	bs.Name = b.Name
 	bs.NameSuggest = NameSuggest{
 		Input:   strings.Fields(stripchars(b.Name, ",.-_")),
-		Oputput: []string{b.Name},
+		Oputput: b.Name,
 	}
 	bs.SyncTransactionVersion = b.SyncTransactionVersion
 	bs.Type = b.Type
@@ -741,7 +741,7 @@ func (c *Client) putDefaultMapping(indexName string) bool {
         "name" : {
           "type" : "string"
         },
-				name_suggest": {
+				"name_suggest": {
                "type": "completion",
                "index_analyzer": "simple",
                "search_analyzer": "simple",
