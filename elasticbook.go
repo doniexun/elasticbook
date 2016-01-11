@@ -708,6 +708,18 @@ func (c *Client) newIndexName() string {
 	return fmt.Sprintf("%s-%s", DefaultIndexName, s)
 }
 
+// Notice the differences between 1.7 and 2.1:
+// ## 1.7
+// https://www.elastic.co/guide/en/elasticsearch/reference/1.7/search-suggesters-completion.html
+//
+// ## 2.1:
+//
+// "name_suggest": {
+//   "type": "completion",
+//   "analyzer": "simple",
+//   "search_analyzer": "simple",
+//   "payloads": false
+// },
 func (c *Client) putDefaultMapping(indexName string) bool {
 	mappings := `{
 		"bookmark" : {
