@@ -118,7 +118,8 @@ type Bookmark struct {
 //    }
 //	}
 type NameSuggest struct {
-	Input []string `json:"input"`
+	Input   []string `json:"input"`
+	Oputput []string `json:"output"`
 }
 
 func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
@@ -128,7 +129,10 @@ func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
 	mis := b.MetaInfo.toIndexable()
 	bs.MetaInfo = *mis
 	bs.Name = b.Name
-	bs.NameSuggest = NameSuggest{strings.Fields(stripchars(b.Name, ",.-_"))}
+	bs.NameSuggest = NameSuggest{
+		Input:   strings.Fields(stripchars(b.Name, ",.-_")),
+		Oputput: []string{b.Name},
+	}
 	bs.SyncTransactionVersion = b.SyncTransactionVersion
 	bs.Type = b.Type
 	bs.URL = b.URL
