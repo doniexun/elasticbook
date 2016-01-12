@@ -42,6 +42,11 @@
     {{ yield }}
   </body>
 
-  <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js" defer></script>
-  <script type="text/javascript" src="/js/main.js" defer></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+  <script type="text/javascript" src="/js/start.js"></script>
+  <script type="text/javascript">
+    loadScript("/js/main.js", function(){
+        //initialization code
+    });
+  </script>
 </html>
