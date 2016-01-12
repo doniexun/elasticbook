@@ -106,6 +106,10 @@ func (a *App) aliases(cl *elasticbook.Client, r render.Render, log *log.Logger) 
 	return
 }
 
+func (a *App) home(r render.Render) {
+	r.HTML(200, "list", nil)
+}
+
 func (a *App) search(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
 	sr, err := cl.Search(s.Term)
 	if err != nil {
