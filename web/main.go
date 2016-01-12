@@ -169,7 +169,7 @@ func (a *App) Start() {
 
 	m := shakenNotStirred(cl, a.templates)
 	m.Get("/", func(r render.Render) {
-		r.Redirect("/elasticbook")
+		r.Redirect("/elasticbook/")
 		return
 	})
 
