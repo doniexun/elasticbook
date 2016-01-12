@@ -175,10 +175,7 @@ func (a *App) Start() {
 
 	m.Group("/elasticbook", func(r martini.Router) {
 
-		m.Get("/", func(r render.Render) {
-			r.HTML(200, "list", nil)
-		})
-
+		m.Get("/", a.home)
 		r.Get("/aliases", a.aliases)
 		r.Post("/search", binding.Bind(Search{}), a.search)
 	})
