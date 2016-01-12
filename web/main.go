@@ -13,6 +13,9 @@ import (
 )
 
 const (
+	// DefaultPublicDir decides where look for public files
+	DefaultPublicDir = "public"
+
 	// DefaultTemplateDir decides where look for templates files
 	DefaultTemplateDir = "templates"
 
@@ -27,6 +30,7 @@ type AppOptionFunc func(*App) error
 // App is the ElasticBook Web App (Martini powered)
 type App struct {
 	templates string
+	publics   string
 	verbose   bool
 }
 
@@ -34,6 +38,7 @@ type App struct {
 func NewApp(options ...AppOptionFunc) (*App, error) {
 	c := &App{
 		templates: DefaultTemplateDir,
+		publics:   DefaultPublicDir,
 		verbose:   DefaultVerbose,
 	}
 	for _, option := range options {
@@ -48,6 +53,18 @@ func NewApp(options ...AppOptionFunc) (*App, error) {
 func SetVerbose(vvv bool) AppOptionFunc {
 	return func(a *App) error {
 		a.verbose = vvv
+		return nil
+	}
+}
+
+// SetPublicDir define the current PublicDir used
+func SetPublicDir(t string) AppOptionFunc {
+	return func(a *App) error {
+		if t != "" {
+			a.publics = t
+		} else {
+			a.publics = DefaultPublicDir
+		}
 		return nil
 	}
 }
@@ -146,10 +163,12 @@ func (a *App) search(cl *elasticbook.Client, s Search, r render.Render, log *log
 func (a *App) suggest(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
 }
 
-func shakenNotStirred(cl *elasticbook.Client, templates string) *martini.ClassicMartini {
+func shakenNotStirred(cl *elasticbook.Client, publics string, templates string) *martini.ClassicMartini {
+	println(publics)
+	println(templates)
 	m := martini.Classic()
 	m.Map(cl)
-	// m.Use(martini.Static("public"))
+	m.Use(martini.Static(publics))
 	m.Use(render.Renderer(render.Options{
 		Directory:       templates,                  // Specify what path to load the templates from.
 		Layout:          "layout",                   // Specify a layout template. Layouts can call {{ yield }} to render the current template.
@@ -159,6 +178,22 @@ func shakenNotStirred(cl *elasticbook.Client, templates string) *martini.Classic
 		IndentXML:       true,                       // Output human readable XML
 		HTMLContentType: render.ContentHTML,
 	}))
+
+	// _ = render.Options{
+	// 	Directory: "templates",
+	// 	Layout:    "layout",
+	// 	Funcs: []template.FuncMap{
+	// 		{
+	// 			"formatTime": func(args ...interface{}) string {
+	// 				t1 := time.Unix(args[0].(int64), 0)
+	// 				return t1.Format(time.Stamp)
+	// 			},
+	// 			"unescaped": func(args ...interface{}) template.HTML {
+	// 				return template.HTML(args[0].(string))
+	// 			},
+	// 		},
+	// 	},
+	// }
 	return m
 }
 
@@ -170,7 +205,7 @@ func (a *App) Start() {
 		os.Exit(1)
 	}
 
-	m := shakenNotStirred(cl, a.templates)
+	m := shakenNotStirred(cl, a.publics, a.templates)
 	m.Get("/", func(r render.Render) {
 		r.Redirect("/elasticbook/")
 		return

@@ -57,8 +57,10 @@ func main() {
 		if sweb {
 			_, filename, _, _ := runtime.Caller(0)
 			templateDir := filepath.Join(filename, "..", "..", "..", "web", "templates")
+			publicDir := filepath.Join(filename, "..", "..", "..", "web", "public")
 			wapp, err := web.NewApp(
 				web.SetVerbose(false),
+				web.SetPublicDir(publicDir),
 				web.SetTemplateDir(templateDir))
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to start WebInterface: %s\n", err)
