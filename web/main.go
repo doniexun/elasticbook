@@ -143,6 +143,22 @@ func (a *App) search(cl *elasticbook.Client, s Search, r render.Render, log *log
 	return
 }
 
+func shakenNotStirred(cl *elasticbook.Client, templates string) *martini.ClassicMartini {
+	m := martini.Classic()
+	m.Map(cl)
+	m.Use(martini.Static("public"))
+	m.Use(render.Renderer(render.Options{
+		Directory:       templates,                  // Specify what path to load the templates from.
+		Layout:          "layout",                   // Specify a layout template. Layouts can call {{ yield }} to render the current template.
+		Extensions:      []string{".tmpl", ".html"}, // Specify extensions to load for templates.
+		Charset:         "UTF-8",                    // Sets encoding for json and html content-types. Default is "UTF-8".
+		IndentJSON:      true,                       // Output human readable JSON
+		IndentXML:       true,                       // Output human readable XML
+		HTMLContentType: render.ContentHTML,
+	}))
+	return m
+}
+
 // Start open a local server
 func (a *App) Start() {
 	cl, err := elasticbook.ClientRemote()
@@ -151,19 +167,7 @@ func (a *App) Start() {
 		os.Exit(1)
 	}
 
-	m := martini.Classic()
-	m.Map(cl)
-	m.Use(martini.Static("public"))
-	m.Use(render.Renderer(render.Options{
-		Directory:       a.templates,                // Specify what path to load the templates from.
-		Layout:          "layout",                   // Specify a layout template. Layouts can call {{ yield }} to render the current template.
-		Extensions:      []string{".tmpl", ".html"}, // Specify extensions to load for templates.
-		Charset:         "UTF-8",                    // Sets encoding for json and html content-types. Default is "UTF-8".
-		IndentJSON:      true,                       // Output human readable JSON
-		IndentXML:       true,                       // Output human readable XML
-		HTMLContentType: render.ContentHTML,
-	}))
-
+	m := shakenNotStirred(cl, a.templates)
 	m.Get("/", func(r render.Render) {
 		r.Redirect("/elasticbook")
 		return
