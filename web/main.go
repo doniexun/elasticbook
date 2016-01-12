@@ -143,10 +143,13 @@ func (a *App) search(cl *elasticbook.Client, s Search, r render.Render, log *log
 	return
 }
 
+func (a *App) suggest(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
+}
+
 func shakenNotStirred(cl *elasticbook.Client, templates string) *martini.ClassicMartini {
 	m := martini.Classic()
 	m.Map(cl)
-	m.Use(martini.Static("public"))
+	// m.Use(martini.Static("public"))
 	m.Use(render.Renderer(render.Options{
 		Directory:       templates,                  // Specify what path to load the templates from.
 		Layout:          "layout",                   // Specify a layout template. Layouts can call {{ yield }} to render the current template.
@@ -178,6 +181,7 @@ func (a *App) Start() {
 		m.Get("/", a.home)
 		r.Get("/aliases", a.aliases)
 		r.Post("/search", binding.Bind(Search{}), a.search)
+		r.Post("/suggest", binding.Bind(Search{}), a.suggest)
 	})
 
 	m.Run()
