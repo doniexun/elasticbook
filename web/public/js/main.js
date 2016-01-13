@@ -19,7 +19,3 @@ function doneTyping () {
   //do something
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  console.log("loaded")
-  document.getElementById("user-greeting").textContent = "Welcome";
-});
