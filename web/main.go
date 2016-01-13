@@ -3,8 +3,10 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/binding"
@@ -170,30 +172,25 @@ func shakenNotStirred(cl *elasticbook.Client, publics string, templates string) 
 	m.Map(cl)
 	m.Use(martini.Static(publics))
 	m.Use(render.Renderer(render.Options{
-		Directory:       templates,                  // Specify what path to load the templates from.
-		Layout:          "layout",                   // Specify a layout template. Layouts can call {{ yield }} to render the current template.
-		Extensions:      []string{".tmpl", ".html"}, // Specify extensions to load for templates.
-		Charset:         "UTF-8",                    // Sets encoding for json and html content-types. Default is "UTF-8".
-		IndentJSON:      true,                       // Output human readable JSON
-		IndentXML:       true,                       // Output human readable XML
+		Directory:       templates,
+		Layout:          "layout",
+		Extensions:      []string{".tmpl", ".html"},
+		Charset:         "UTF-8",
+		IndentJSON:      true,
+		IndentXML:       true,
 		HTMLContentType: render.ContentHTML,
+		Funcs: []template.FuncMap{
+			{
+				"formatTime": func(args ...interface{}) string {
+					t1 := time.Unix(args[0].(int64), 0)
+					return t1.Format(time.Stamp)
+				},
+				"unescaped": func(args ...interface{}) template.HTML {
+					return template.HTML(args[0].(string))
+				},
+			},
+		},
 	}))
-
-	// _ = render.Options{
-	// 	Directory: "templates",
-	// 	Layout:    "layout",
-	// 	Funcs: []template.FuncMap{
-	// 		{
-	// 			"formatTime": func(args ...interface{}) string {
-	// 				t1 := time.Unix(args[0].(int64), 0)
-	// 				return t1.Format(time.Stamp)
-	// 			},
-	// 			"unescaped": func(args ...interface{}) template.HTML {
-	// 				return template.HTML(args[0].(string))
-	// 			},
-	// 		},
-	// 	},
-	// }
 	return m
 }
 
