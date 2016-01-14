@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM loaded");
-  // document.getElementById("user-greeting").textContent = "Welcome";
 });
 
 function loadScript(url, callback) {
@@ -15,7 +14,7 @@ function loadScript(url, callback) {
         callback();
       }
     };
-  } else {  //Others
+  } else {
     script.onload = function() {
       callback();
     };
