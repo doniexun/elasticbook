@@ -140,6 +140,10 @@ func (b *Bookmark) toIndexable() (bs *BookmarkIndexable) {
 }
 
 // BookmarkIndexable is a bookmark entry with a sanitised MetaInfo
+//
+// .Suggest: NewSuggestField().
+//			Input("Cycling is fun.").
+//			Output("Cycling is a fun sport.")
 type BookmarkIndexable struct {
 	DateAdded              time.Time     `json:"date_added"`
 	OriginalID             string        `json:"id"`
