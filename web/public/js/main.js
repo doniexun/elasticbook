@@ -4,11 +4,15 @@ function doneTyping (t) {
     url: "/elasticbook/suggest",
     data: { term: t }
   })
-  .done(function() {
-    console.log( "sent request", t );
+  .done(function(res) {
+    console.log("received suggestions");
+    options = res.completion[0]["options"]
+    options.forEach(function(v) {
+      console.log(v['text'])
+    })
   })
   .fail(function() {
-    console.log( "error" );
+    console.log("error");
   })
   .always(function() {
     console.log("done...")
