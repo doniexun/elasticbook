@@ -130,6 +130,9 @@ func (a *App) Start() {
 	m.Run()
 }
 
+// Suggest is the data sent without pressing the key.
+type Suggest struct {
+	Term string `form:"term"`
 }
 
 func (a *App) aliases(cl *elasticbook.Client, r render.Render, log *log.Logger) {
