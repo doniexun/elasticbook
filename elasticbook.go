@@ -635,6 +635,31 @@ func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 	return sr, err
 }
 
+// Suggest performs a _suggest query
+func (c *Client) Suggest(term string) (elastic.SuggestResult, error) {
+	client := c.client
+	nameSuggest := "name_suggest"
+
+	termSuggesterName := "elasticbook-term-suggester"
+	termSuggester := elastic.NewTermSuggester(
+		termSuggesterName).Text(term).Field(nameSuggest)
+
+	phraseSuggesterName := "elasticbook-phrase-suggester"
+	phraseSuggester := elastic.NewPhraseSuggester(
+		phraseSuggesterName).Text(term).Field(nameSuggest)
+
+	completionSuggesterName := "elasticbook-completion-suggester"
+	completionSuggester := elastic.NewCompletionSuggester(
+		completionSuggesterName).Text(term).Field(nameSuggest)
+
+	return client.Suggest().
+		Index(DefaultAliasName).
+		Suggester(termSuggester).
+		Suggester(phraseSuggester).
+		Suggester(completionSuggester).
+		Do()
+}
+
 // Unalias deletes an alias
 func (c *Client) Unalias(aliasName string) (bool, error) {
 	client := c.client
