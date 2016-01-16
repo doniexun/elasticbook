@@ -625,7 +625,8 @@ func (c *Client) Search(term string) (*elastic.SearchResult, error) {
 		Type(TypeName).
 		Query(q).
 		Explain(true).
-		// Sort("date_added", true). // No _score if this is enabled
+		// No '_score' field is returned if this is enabled
+		// Sort("date_added", true).
 		From(0).
 		Size(100).
 		Pretty(true).
