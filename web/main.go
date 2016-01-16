@@ -198,9 +198,6 @@ func (a *App) search(cl *elasticbook.Client, s Search, r render.Render, log *log
 	return
 }
 
-func (a *App) suggest(cl *elasticbook.Client, s Search, r render.Render, log *log.Logger) {
-}
-
 func shakenNotStirred(cl *elasticbook.Client, publics string, templates string) *martini.ClassicMartini {
 	println(publics)
 	println(templates)
@@ -230,5 +227,19 @@ func shakenNotStirred(cl *elasticbook.Client, publics string, templates string) 
 	return m
 }
 
+func (a *App) suggest(cl *elasticbook.Client, s Suggest, r render.Render, log *log.Logger) {
+	suggestions := map[string]interface{}{
+		"phrase":     make([]string, 0),
+		"term":       make([]string, 0),
+		"completion": make([]string, 0),
+	}
+	sgs, err := cl.Suggest(s.Term)
+	if err == nil {
+		suggestions["phrase"] = sgs["elasticbook-phrase-suggester"]
+		suggestions["term"] = sgs["elasticbook-term-suggester"]
+		suggestions["completion"] = sgs["elasticbook-completion-suggester"]
+		r.JSON(200, suggestions)
+	} else {
+		r.JSON(400, suggestions)
 	}
 }
