@@ -155,6 +155,12 @@ func (a *App) aliases(cl *elasticbook.Client, r render.Render, log *log.Logger) 
 	return
 }
 
+func checkErr(err error, msg string) {
+	if err != nil {
+		log.Fatalln(msg, err)
+	}
+}
+
 func (a *App) home(r render.Render) {
 	r.HTML(200, "list", nil)
 }
