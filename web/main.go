@@ -36,6 +36,12 @@ type App struct {
 	verbose   bool
 }
 
+// IndexAlias contains an index name and its aliases
+type IndexAlias struct {
+	Index int
+	Name  string
+}
+
 // NewApp Set up the default application
 func NewApp(options ...AppOptionFunc) (*App, error) {
 	c := &App{
@@ -51,12 +57,13 @@ func NewApp(options ...AppOptionFunc) (*App, error) {
 	return c, nil
 }
 
-// SetVerbose define the verbose logging
-func SetVerbose(vvv bool) AppOptionFunc {
-	return func(a *App) error {
-		a.verbose = vvv
-		return nil
-	}
+// Result is the result of a search
+type Result struct {
+	Index     int
+	URL       string
+	Title     string
+	DateAdded string
+	Score     float64
 }
 
 // SetPublicDir define the current PublicDir used
@@ -83,6 +90,14 @@ func SetTemplateDir(t string) AppOptionFunc {
 	}
 }
 
+// SetVerbose define the verbose logging
+func SetVerbose(vvv bool) AppOptionFunc {
+	return func(a *App) error {
+		a.verbose = vvv
+		return nil
+	}
+}
+
 // Search represent a search request made from the WebInterface
 type Search struct {
 	ID      int64 `db:"id"`
@@ -90,19 +105,31 @@ type Search struct {
 	Term    string `form:"term" binding:"required"`
 }
 
-// Result is the result of a search
-type Result struct {
-	Index     int
-	URL       string
-	Title     string
-	DateAdded string
-	Score     float64
+// Start open a local server
+func (a *App) Start() {
+	cl, err := elasticbook.ClientRemote()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+
+	m := shakenNotStirred(cl, a.publics, a.templates)
+	m.Get("/", func(r render.Render) {
+		r.Redirect("/elasticbook/")
+		return
+	})
+
+	m.Group("/elasticbook", func(r martini.Router) {
+
+		m.Get("/", a.home)
+		r.Get("/aliases", a.aliases)
+		r.Post("/search", binding.Bind(Search{}), a.search)
+		r.Post("/suggest", binding.Bind(Suggest{}), a.suggest)
+	})
+
+	m.Run()
 }
 
-// IndexAlias contains an index name and its aliases
-type IndexAlias struct {
-	Index int
-	Name  string
 }
 
 func (a *App) aliases(cl *elasticbook.Client, r render.Render, log *log.Logger) {
@@ -194,27 +221,5 @@ func shakenNotStirred(cl *elasticbook.Client, publics string, templates string) 
 	return m
 }
 
-// Start open a local server
-func (a *App) Start() {
-	cl, err := elasticbook.ClientRemote()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
 	}
-
-	m := shakenNotStirred(cl, a.publics, a.templates)
-	m.Get("/", func(r render.Render) {
-		r.Redirect("/elasticbook/")
-		return
-	})
-
-	m.Group("/elasticbook", func(r martini.Router) {
-
-		m.Get("/", a.home)
-		r.Get("/aliases", a.aliases)
-		r.Post("/search", binding.Bind(Search{}), a.search)
-		r.Post("/suggest", binding.Bind(Search{}), a.suggest)
-	})
-
-	m.Run()
 }
