@@ -13,6 +13,8 @@ function doneTyping (t) {
       suggestions.push(v['text'])
     })
     console.log(suggestions);
+    $("form input[type=text][data-suggest=true]").autocomplete({
+      source: suggestions });
   })
   .fail(function() {
     console.log("error");
