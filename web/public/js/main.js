@@ -41,6 +41,12 @@ function doneTyping (t) {
 // list = [];
 // awesomplete.list = list;
 
+$(document).ready(function() {
+  if (window.location.href.indexOf("/search") == -1) {
+    $("form input[type=text][data-suggest=true]").get(0).focus();
+  }
+});
+
 $(document).on('keydown', 'form input[type=text]', function(e) {
   var typingTimer;
   var doneTypingInterval = 2000;
