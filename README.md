@@ -224,9 +224,13 @@ $ go run cmd/cli/main.go --web
 [martini] Completed 200 OK in 461.663807ms
 ```
 
+There is a nice and handy _autocomplete_ feature that uses the _suggestion_ ES query while you type in the search bar:
+
+![autocomplete](https://cloud.githubusercontent.com/assets/456318/12403992/33557772-be38-11e5-87bb-449f6b1f9823.png)
+
 Base search:
 
-![base search](https://cloud.githubusercontent.com/assets/456318/12184665/efb071a6-b596-11e5-92a9-c49dc19748e5.png)
+![base search](https://cloud.githubusercontent.com/assets/456318/12404046/aa5713bc-be38-11e5-971d-fed7c6b283eb.png)
 
 Look for _elastic_ and found these:
 
@@ -289,11 +293,6 @@ Classy web framework for Go.
 
 - https://github.com/go-martini/martini
 
-## BoltDB
-
-An embedded key/value database for Go.
-
-- https://github.com/boltdb/bolt
 
 ## Utils
 
