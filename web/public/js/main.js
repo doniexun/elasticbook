@@ -6,8 +6,9 @@ function doneTyping (t) {
   })
   .done(function(res) {
     console.log("received suggestions");
-    var options = res.completion[0]["options"];
+
     var suggestions = [];
+    var options = res.completion[0]["options"];
     options.forEach(function(v) {
       suggestions.push(v['text'])
     })
@@ -24,11 +25,10 @@ function doneTyping (t) {
 // new Awesomplete(
 //   $("form input[type=text][data-suggest=true]").get(0),
 //   {
-//     // minChars: 3,
-//     // maxItems: 15,
+//     minChars: 3,
+//     maxItems: 15,
 //     list: suggestions
 //   });
-
 
 // var awesomplete = new Awesomplete(
 //   input,
@@ -48,9 +48,7 @@ $(document).on('keydown', 'form input[type=text]', function(e) {
     input.on('keyup', function () {
       clearTimeout(typingTimer);
       var term = input.val()
-      typingTimer = setTimeout(
-          doneTyping(term),
-          doneTypingInterval);
+      typingTimer = setTimeout(doneTyping(term), doneTypingInterval);
     });
 
     input.on('keydown', function () {
