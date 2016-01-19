@@ -14,14 +14,15 @@ package elasticbook
 // DONE: add alias check for double/existing
 // TODO: add query time ranged
 // TODO: add fulltext search
-// TODO: add query CLI
-// TODO: add web interface
+// DONE: add query CLI
+// DONE: add web interface
 // TODO: refactor doubled code
 // TODO: add Doctor for recovery/rollback default index
-// TODO: add safety check when switching alias
+// DONE: add safety check when switching alias
 // DONE: add 'by-index' in alias CLI
 // DONE: add 'by-index' in defaultAlias CLI
 // TODO: search sentences
+// TODO: pay Bonsai.io monthly plan ($50/month ... cool story Bro)
 
 import (
 	"bytes"
